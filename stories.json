@@ -1,0 +1,41 @@
+[
+  {
+    "id": "story-1-seasonal",
+    "title": "Breathing with the Seasons",
+    "subtitle": "Mediterranean Annual Temperature Cycle (2018–2023)",
+    "description": "Listen to the harmonic breathing of our planet. As Earth tilts throughout its orbit, observe how temperature rises every summer and falls every winter in a predictable annual cadence.",
+    "shape": "seasonal",
+    "badge": "Cycle",
+    "gibs_layer": "MODIS_Terra_CorrectedReflectance_TrueColor",
+    "data_file": "data/story-1-seasonal.json",
+    "icon": "🌱",
+    "accent_color": "#10b981",
+    "default_zoom": 6
+  },
+  {
+    "id": "story-2-trend",
+    "title": "A Decadal Drift",
+    "subtitle": "24-Year Urban Climate Drift (2000–2023)",
+    "description": "Track nearly a quarter-century of warming in the Tokyo basin. The sound gradually drifts upward across the decades, illustrating subtle yet steady long-term climate shift.",
+    "shape": "trend",
+    "badge": "Trend",
+    "gibs_layer": "MODIS_Terra_CorrectedReflectance_TrueColor",
+    "data_file": "data/story-2-trend.json",
+    "icon": "📈",
+    "accent_color": "#f59e0b",
+    "default_zoom": 7
+  },
+  {
+    "id": "story-3-event",
+    "title": "The Day the Heat Dome Broke Records",
+    "subtitle": "2021 Pacific Northwest Extreme Heat Anomaly",
+    "description": "Experience the calm late spring of 2021 before an unprecedented atmospheric ridge locks over Western North America. Hear the pitch explode upward and trigger a sudden alert marker as temperatures cross 38°C (100°F).",
+    "shape": "event",
+    "badge": "Sudden Event ⭐",
+    "gibs_layer": "MODIS_Terra_CorrectedReflectance_TrueColor",
+    "data_file": "data/story-3-event.json",
+    "icon": "🔥",
+    "accent_color": "#ef4444",
+    "default_zoom": 6
+  }
+]

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Earth Jukebox — NASA Earth Data Sonification</title>
+  <meta name="description" content="Experience Earth's climate data through sound and synchronized satellite imagery. Built for NASA Space Apps Challenge 2026.">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  
+  <!-- Application CSS -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+</head>
+<body>
+  <!-- Accessible Skip Navigation -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Header Banner -->
+  <header role="banner" class="app-header">
+    <div class="header-inner container">
+      <div class="logo-group">
+        <span class="logo-icon" aria-hidden="true">🌍</span>
+        <div>
+          <h1 class="app-title">Earth Jukebox</h1>
+          <p class="app-tagline">Listen to our living planet through sound and satellite vision</p>
+        </div>
+      </div>
+      <div class="header-badge" aria-label="Project category">
+        <span class="nasa-pill">NASA Space Apps 2026</span>
+        <span class="challenge-pill">The Earth Information Jukebox</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Content -->
+  <main id="main-content" role="main" class="container">
+    
+    <!-- LANDING VIEW: Story Selection Grid -->
+    <section id="landing-view" class="view-panel" aria-label="Story Selection Catalog">
+      <div class="catalog-intro">
+        <h2>Choose an Earth Data Story</h2>
+        <p>
+          Select one of the three verified NASA time series below. Each story converts satellite and climate observations 
+          into sound, enabling you to experience climate dynamics <strong>by ear alone</strong>.
+        </p>
+      </div>
+
+      <div id="stories-grid" class="stories-grid" role="list">
+        <!-- Rendered dynamically by app.js from stories.json -->
+      </div>
+
+      <!-- Quick Concept Guide -->
+      <aside class="concept-card" aria-label="How Earth Jukebox Works">
+        <h3>🎵 How It Works: The Four Dimensions of Sound</h3>
+        <div class="concept-grid">
+          <div class="concept-item">
+            <span class="concept-symbol">🎼</span>
+            <div>
+              <strong>Value → Pitch</strong>
+              <p>Colder or lower measurements produce deep, low tones; extreme heat or higher values rise to bright, high pitches.</p>
+            </div>
+          </div>
+          <div class="concept-item">
+            <span class="concept-symbol">🎻</span>
+            <div>
+              <strong>Spread → Timbre</strong>
+              <p>Uniform data produces a pure sine wave; high spatial variability introduces richer harmonics and sawtooth tones.</p>
+            </div>
+          </div>
+          <div class="concept-item">
+            <span class="concept-symbol">⏱️</span>
+            <div>
+              <strong>Rate of Change → Tempo</strong>
+              <p>Times of rapid transformation accelerate the rhythm; steady periods play at a calm, measured pace.</p>
+            </div>
+          </div>
+          <div class="concept-item">
+            <span class="concept-symbol">🔔</span>
+            <div>
+              <strong>Thresholds → Alert Marker</strong>
+              <p>Crossing critical climate thresholds (such as 38°C / 100°F) triggers an immediate percussive warning chime.</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- PLAYER VIEW: Interactive Sonification & Synchronized Map -->
+    <section id="player-view" class="view-panel" hidden aria-label="Interactive Story Player">
+      
+      <!-- Story Header Navigation -->
+      <div class="player-nav">
+        <button id="btn-back-catalog" class="btn btn-outline" aria-label="Back to Story Catalog">
+          ← Back to Stories
+        </button>
+        <div class="story-heading">
+          <div class="story-badges">
+            <span id="player-shape-badge" class="badge">Story</span>
+            <span id="player-source-badge" class="badge badge-nasa">NASA Data</span>
+          </div>
+          <h2 id="player-story-title">Story Title</h2>
+          <p id="player-story-subtitle" class="story-subtitle">Subtitle</p>
+        </div>
+      </div>
+
+      <!-- Layout: Map & Synchronized Visuals -->
+      <div class="player-grid">
+        
+        <!-- Left Column: Synchronized Leaflet Map with NASA GIBS Tiles -->
+        <div class="map-column">
+          <div class="map-wrapper">
+            <div id="map" role="region" aria-label="Interactive satellite map displaying NASA GIBS tile imagery for the current date"></div>
+            <div class="map-overlay-date" id="map-date-chip" aria-hidden="true">
+              Date: <span id="chip-date">—</span>
+            </div>
+          </div>
+          <div class="map-caption">
+            <span>Satellite Layer: <strong id="gibs-layer-label">NASA GIBS TrueColor</strong></span>
+            <span id="map-coordinates-label">Lat/Lon: —</span>
+          </div>
+        </div>
+
+        <!-- Right Column: Readouts, Summary & Sonification Legend -->
+        <div class="info-column">
+          
+          <!-- Large Synchronized Metric Readout -->
+          <div class="readout-card">
+            <div class="readout-header">
+              <span class="readout-label">Current Frame Observation</span>
+              <span id="frame-counter" class="frame-counter">Frame 1 of 100</span>
+            </div>
+            <div class="readout-main">
+              <div class="metric-date" id="visible-date">—</div>
+              <div class="metric-val" id="visible-value">—</div>
+            </div>
+            
+            <!-- Accessible Screen Reader Live Announcement -->
+            <div id="live-readout" class="sr-only" aria-live="polite" aria-atomic="true">
+              Ready to play.
+            </div>
+          </div>
+
+          <!-- Dynamic Story Summary -->
+          <div class="summary-card" aria-label="Story Narrative Analysis">
+            <h3>📖 Climate Narrative</h3>
+            <p id="story-summary-text">Loading story analysis...</p>
+          </div>
+
+          <!-- Interactive Sonification Legend -->
+          <div class="legend-card" aria-label="Sonification Legend and Audio Preview">
+            <h3>🎧 Sonification Guide</h3>
+            <div class="legend-scale">
+              <div class="scale-bar"></div>
+              <div class="scale-labels">
+                <span>Low Pitch (C3 / 48) = <strong id="legend-min-val">—</strong></span>
+                <span>High Pitch (C6 / 84) = <strong id="legend-max-val">—</strong></span>
+              </div>
+            </div>
+            <p class="legend-note" id="legend-threshold-note">
+              Alert Marker: <span id="legend-thresh-val">None</span>
+            </p>
+
+            <!-- Sample Sound Preview Buttons -->
+            <div class="sample-buttons-group" role="group" aria-label="Preview sonification tones">
+              <span class="sample-label">Preview Sound:</span>
+              <button class="btn btn-sm btn-sample" data-sample="low" aria-label="Preview lowest pitch">Low Note</button>
+              <button class="btn btn-sm btn-sample" data-sample="mid" aria-label="Preview mid pitch">Mid Note</button>
+              <button class="btn btn-sm btn-sample" data-sample="high" aria-label="Preview highest pitch">High Note</button>
+              <button class="btn btn-sm btn-sample btn-sample-alert" data-sample="marker" aria-label="Preview threshold alert chime">Alert Chime</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Playback Controls Bar -->
+      <div class="controls-panel" role="region" aria-label="Playback and Scrubber Controls">
+        <div class="controls-row primary-controls">
+          <div class="playback-buttons">
+            <button id="btn-step-back" class="btn btn-icon" title="Step back 1 frame (Left Arrow)" aria-label="Step back one frame">
+              ⏮
+            </button>
+            <button id="btn-play-pause" class="btn btn-primary btn-play" aria-label="Play sonification" aria-pressed="false">
+              <span id="play-icon">▶</span> <span id="play-text">Play</span>
+            </button>
+            <button id="btn-step-forward" class="btn btn-icon" title="Step forward 1 frame (Right Arrow)" aria-label="Step forward one frame">
+              ⏭
+            </button>
+          </div>
+
+          <!-- Main Timeline Scrubber Slider -->
+          <div class="scrubber-container">
+            <label for="timeline-scrubber" class="sr-only">Timeline Frame Scrubber</label>
+            <input type="range" id="timeline-scrubber" class="timeline-slider" min="0" max="100" value="0" step="1" aria-label="Timeline Scrubber">
+            <div class="timeline-ticks">
+              <span id="timeline-start-date">Start</span>
+              <span id="timeline-event-marker" class="timeline-alert-marker" hidden>⚠️ Threshold</span>
+              <span id="timeline-end-date">End</span>
+            </div>
+          </div>
+
+          <!-- Secondary Audio Adjusters -->
+          <div class="secondary-controls">
+            <!-- Playback Speed -->
+            <div class="control-group">
+              <label for="select-speed">Speed:</label>
+              <select id="select-speed" class="form-select" aria-label="Playback speed multiplier">
+                <option value="0.5">0.5×</option>
+                <option value="1.0" selected>1.0×</option>
+                <option value="1.5">1.5×</option>
+                <option value="2.0">2.0×</option>
+              </select>
+            </div>
+
+            <!-- Volume Control -->
+            <div class="control-group">
+              <label for="slider-volume">Vol:</label>
+              <input type="range" id="slider-volume" class="volume-slider" min="-30" max="0" value="-6" step="1" aria-label="Master audio volume">
+            </div>
+          </div>
+        </div>
+
+        <!-- Keyboard Shortcuts Hint -->
+        <div class="shortcuts-hint" aria-hidden="true">
+          <span>Shortcuts: <strong>Space</strong> (Play/Pause) • <strong>← / →</strong> (Step Frame) • <strong>1 / 2 / 3</strong> (Switch Story) • <strong>Esc</strong> (Catalog)</span>
+        </div>
+      </div>
+
+      <!-- Dataset Attribution and Provenance -->
+      <footer class="dataset-meta-footer">
+        <div class="meta-item">
+          <strong>NASA Dataset:</strong> <span id="meta-dataset-name">—</span>
+        </div>
+        <div class="meta-item">
+          <strong>Source Service:</strong> <span id="meta-source-name">NASA POWER & VEDA APIs</span>
+        </div>
+        <div class="meta-item">
+          <strong>Spatial Bounding Box:</strong> <span id="meta-bbox-coords">—</span>
+        </div>
+      </footer>
+
+    </section>
+
+  </main>
+
+  <!-- Global Footer -->
+  <footer role="contentinfo" class="app-footer">
+    <div class="container footer-inner">
+      <p>
+        <strong>Earth Jukebox</strong> — Solo submission for 
+        <a href="https://www.spaceappschallenge.org/" target="_blank" rel="noopener">NASA International Space Apps Challenge 2026</a>.
+      </p>
+      <p class="footer-subtext">
+        Satellite Imagery courtesy of <a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs" target="_blank" rel="noopener">NASA GIBS</a>. 
+        Climate data provided by <a href="https://power.larc.nasa.gov/" target="_blank" rel="noopener">NASA POWER</a> and <a href="https://openveda.cloud/" target="_blank" rel="noopener">NASA VEDA</a>. 
+        Audio synthesized via <a href="https://tonejs.github.io/" target="_blank" rel="noopener">Tone.js</a>.
+      </p>
+    </div>
+  </footer>
+
+  <!-- CDN Dependencies -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+
+  <!-- Application Logic -->
+  <script src="audio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
