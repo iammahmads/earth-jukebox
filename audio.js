@@ -1,5 +1,5 @@
 /**
- * Earth Jukebox — Advanced Sonification Engine v3 (audio.js)
+ * Earth Jukebox — Advanced Sonification Engine v4 (audio.js)
  * NASA Space Apps 2026
  *
  * 5 Distinct Synthesis Personas:
@@ -9,14 +9,10 @@
  *   story-4-amazon    → Lush PolySynth Rain Pad + Chorus + Reverb (Amazon Rainfall Pulse)
  *   story-5-australia → Resonant Sawtooth Wildfire Lead + Fast Filter (2019–20 Black Summer)
  *
- * Sound dimensions:
- *   Value       → Pitch (MIDI 48 C3 → 84 C6, linear pure function)
- *   Spread      → Timbre (Sine → Triangle → Sawtooth)
- *   |Δ value|   → Tempo (60 BPM → 160 BPM)
- *   Threshold   → Layered Percussive Metal Bell + Noise Burst Alarm
- *   Longitude   → Stereo Pan (−1.0 to +1.0)
- *
- * Output: Master volume boosted + Compressor / Limiter for punchy, loud, crystal-clear sound.
+ * Applied Scientific Utility Additions:
+ *   - Binaural Era Comparator: Left Ear (Baseline) vs Right Ear (Current Anomaly)
+ *   - Acoustic Anomaly Ping for Rapid Climate Screening
+ *   - Master Limiter & High-Gain Output for crisp, loud sonification
  */
 
 // ─── Pure Mapping Functions (testable with Node.js) ─────────────────────────
@@ -68,7 +64,6 @@ function isThresholdCrossing(currFrame, prevFrame, storyData) {
 
 const STORY_PROFILES = {
   'story-1-seasonal': {
-    // Ethereal AM Flute + Reverb — Mediterranean cycle
     buildSynth: (chain) => {
       const synth = new Tone.AMSynth({
         harmonicity: 2.5,
@@ -77,7 +72,7 @@ const STORY_PROFILES = {
         modulationEnvelope: { attack: 0.1, decay: 0.1, sustain: 0.7, release: 0.8 },
         envelope: { attack: 0.08, decay: 0.1, sustain: 0.8, release: 1.0 }
       });
-      synth.volume.value = 2; // Loud & clear
+      synth.volume.value = 2;
       const chorus = new Tone.Chorus(2.5, 2.5, 0.4).start();
       const reverb = new Tone.Reverb({ decay: 2.5, wet: 0.35 });
       synth.chain(chorus, reverb, chain);
@@ -91,7 +86,6 @@ const STORY_PROFILES = {
   },
 
   'story-2-trend': {
-    // Warm FM Synth + Ping-Pong Delay — Tokyo warming drift
     buildSynth: (chain) => {
       const synth = new Tone.FMSynth({
         harmonicity: 1.5,
@@ -116,7 +110,6 @@ const STORY_PROFILES = {
   },
 
   'story-3-event': {
-    // Distorted MonoSynth + EQ — 2021 Pacific Northwest Heat Dome Crisis
     buildSynth: (chain) => {
       const synth = new Tone.MonoSynth({
         oscillator: { type: 'sawtooth' },
@@ -124,7 +117,7 @@ const STORY_PROFILES = {
         filterEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.5, release: 0.7, baseFrequency: 500, octaves: 3 },
         envelope: { attack: 0.01, decay: 0.08, sustain: 0.85, release: 0.5 }
       });
-      synth.volume.value = 4; // Punchy lead
+      synth.volume.value = 4;
       const distort = new Tone.Distortion(0.22);
       const reverb  = new Tone.Reverb({ decay: 1.2, wet: 0.2 });
       const eq      = new Tone.EQ3({ low: -2, mid: 3, high: 4 });
@@ -139,7 +132,6 @@ const STORY_PROFILES = {
   },
 
   'story-4-amazon': {
-    // Lush PolySynth Rain Pad + Chorus — Amazon Basin Rainfall Pulse
     buildSynth: (chain) => {
       const synth = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'sine' },
@@ -159,7 +151,6 @@ const STORY_PROFILES = {
   },
 
   'story-5-australia': {
-    // Resonant Sawtooth Wildfire Lead — 2019-20 Australian Black Summer
     buildSynth: (chain) => {
       const synth = new Tone.MonoSynth({
         oscillator: { type: 'sawtooth' },
@@ -194,15 +185,22 @@ const AudioEngine = (() => {
   let currentProfile = null;
   let frameIndex = 0;
 
-  // Audio chain nodes
+  // Master bus
   let masterVol    = null;
-  let limiter      = null;   // Prevents clipping while boosting volume
+  let limiter      = null;
   let panner       = null;
-  let synthCtx     = null;   // { synth, effects[] }
-  let ambientOsc   = null;   // Gentle sub-bass atmospheric pad
+  let synthCtx     = null;
+  let ambientOsc   = null;
   let markerBell   = null;
   let markerNoise  = null;
-  let analyserNode = null;   // Web Audio AnalyserNode for oscilloscope
+  let anomalyPing  = null;
+  let analyserNode = null;
+
+  // Binaural Comparator synths (Left = Era A baseline, Right = Era B anomaly)
+  let binauralLeftPan   = null;
+  let binauralRightPan  = null;
+  let binauralLeftSynth = null;
+  let binauralRightSynth= null;
 
   // Callbacks
   let onFrameCb     = null;
@@ -218,19 +216,19 @@ const AudioEngine = (() => {
 
     await Tone.start();
 
-    // Limiter -> Master Volume (boosted default +4 dB for clear, rich audio)
+    // Limiter -> Master Volume
     limiter = new Tone.Limiter(-0.5).toDestination();
     masterVol = new Tone.Volume(4).connect(limiter);
 
-    // Native Web Audio AnalyserNode for high-fps canvas oscilloscope
+    // Native AnalyserNode for 60fps canvas oscilloscope
     analyserNode = Tone.getContext().rawContext.createAnalyser();
     analyserNode.fftSize = 512;
     Tone.getDestination().connect(analyserNode);
 
-    // Stereo Panner routed into masterVol
+    // Primary Panner
     panner = new Tone.Panner(0).connect(masterVol);
 
-    // Layered Alert System: Metal bell + punchy noise chime
+    // Layered Alert System: Bell + Noise
     markerBell = new Tone.MetalSynth({
       frequency: 440,
       envelope: { attack: 0.001, decay: 1.2, release: 0.2 },
@@ -239,7 +237,7 @@ const AudioEngine = (() => {
       resonance: 4000,
       octaves: 1.5
     }).connect(masterVol);
-    markerBell.volume.value = 2; // Loud alert bell
+    markerBell.volume.value = 2;
 
     markerNoise = new Tone.NoiseSynth({
       noise: { type: 'pink' },
@@ -247,12 +245,34 @@ const AudioEngine = (() => {
     }).connect(masterVol);
     markerNoise.volume.value = -4;
 
+    // Acoustic Anomaly Screening Ping (high-frequency clean sonar ping)
+    anomalyPing = new Tone.Synth({
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.005, decay: 0.25, sustain: 0.0, release: 0.1 }
+    }).connect(masterVol);
+    anomalyPing.volume.value = 1;
+
+    // Binaural Era Comparator Synths (Hard Left vs Hard Right)
+    binauralLeftPan = new Tone.Panner(-0.85).connect(masterVol);
+    binauralRightPan = new Tone.Panner(0.85).connect(masterVol);
+
+    binauralLeftSynth = new Tone.Synth({
+      oscillator: { type: 'triangle' },
+      envelope: { attack: 0.05, decay: 0.1, sustain: 0.8, release: 0.4 }
+    }).connect(binauralLeftPan);
+    binauralLeftSynth.volume.value = 1;
+
+    binauralRightSynth = new Tone.Synth({
+      oscillator: { type: 'sawtooth' },
+      envelope: { attack: 0.05, decay: 0.1, sustain: 0.8, release: 0.4 }
+    }).connect(binauralRightPan);
+    binauralRightSynth.volume.value = 1;
+
     ready = true;
-    console.log('AudioEngine v3 initialized (Master Volume boosted, 5 Synthesis Personas active).');
+    console.log('AudioEngine v4 initialized with Binaural Comparator and Anomaly Sonar.');
   }
 
   function buildStoryProfile(storyId) {
-    // Tear down any existing synth & effects
     if (synthCtx) {
       try {
         synthCtx.synth.dispose();
@@ -269,13 +289,12 @@ const AudioEngine = (() => {
     currentProfile = profile;
     synthCtx = profile.buildSynth(panner);
 
-    // Subtle atmospheric sub-pad playing background drone
     ambientOsc = new Tone.Synth({
       oscillator: { type: profile.ambientType },
       envelope: { attack: 2.0, decay: 0.1, sustain: 1.0, release: 3.0 }
     });
     const ambientReverb = new Tone.Reverb({ decay: 4, wet: 0.7 });
-    const ambientVol    = new Tone.Volume(-22); // Quiet underlying texture
+    const ambientVol    = new Tone.Volume(-22);
     ambientOsc.chain(ambientReverb, ambientVol, masterVol);
     ambientOsc.triggerAttack(profile.ambientNote);
   }
@@ -287,7 +306,6 @@ const AudioEngine = (() => {
 
     if (!storyData || !storyData.frames || !storyData.frames.length) return;
 
-    // Precompute ranges
     let mxDelta = 0.1, mxSpread = 0.1;
     for (let i = 0; i < storyData.frames.length; i++) {
       const f = storyData.frames[i];
@@ -300,13 +318,11 @@ const AudioEngine = (() => {
     maxDelta = mxDelta;
     maxSpread = mxSpread;
 
-    // Stereo pan by story longitude center
     if (ready && panner && storyData.area && storyData.area.bbox) {
       const lon = (storyData.area.bbox[0] + storyData.area.bbox[2]) / 2;
       panner.pan.rampTo(panForLongitude(lon), 0.5);
     }
 
-    // Build this story's dedicated synthesis profile
     if (ready) {
       buildStoryProfile(storyData.story_id);
     }
@@ -321,7 +337,6 @@ const AudioEngine = (() => {
     const note = Tone.Frequency(midi, 'midi').toNote();
     const noteLen = currentProfile ? currentProfile.noteLength : '8n';
 
-    // Dynamically modulate oscillator timbre based on spread
     const timbre = timbreForSpread(frame.spread, maxSpread);
     try {
       if (synthCtx.synth.oscillator) {
@@ -329,19 +344,16 @@ const AudioEngine = (() => {
       }
     } catch (_) {}
 
-    // Threshold Alert — fires layered metal chime + pink noise burst
     if (isThresholdCrossing(frame, prevFrame, currentStory)) {
       if (markerBell)  markerBell.triggerAttackRelease('C5', '4n');
       if (markerNoise) markerNoise.triggerAttackRelease('16n');
       if (onThresholdCb) onThresholdCb(frame);
     }
 
-    // Trigger melodic note
     try {
       synthCtx.synth.triggerAttackRelease(note, noteLen);
     } catch (_) {}
 
-    // Modulate ambient pad pitch slowly based on current value normalized 0–1
     if (ambientOsc && currentProfile) {
       const t = (frame.value - currentStory.min) / ((currentStory.max - currentStory.min) || 1);
       const baseFreq = Tone.Frequency(currentProfile.ambientNote).toFrequency();
@@ -367,7 +379,6 @@ const AudioEngine = (() => {
 
     const delta = prevFrame ? Math.abs(frame.value - prevFrame.value) : 0;
     const bpm   = tempoForDelta(delta, maxDelta);
-    // Interval in ms based on dynamic rate of change and speed multiplier
     const ms = Math.max(75, Math.min(850, (60000 / bpm) / (playbackRate * 2.5)));
 
     frameIndex++;
@@ -424,6 +435,11 @@ const AudioEngine = (() => {
       return;
     }
 
+    if (level === 'anomaly') {
+      if (anomalyPing) anomalyPing.triggerAttackRelease('E6', '16n');
+      return;
+    }
+
     const midiMap = {
       low: MIN_MIDI,
       mid: Math.round((MIN_MIDI + MAX_MIDI) / 2),
@@ -433,6 +449,35 @@ const AudioEngine = (() => {
     if (synthCtx && synthCtx.synth) {
       synthCtx.synth.triggerAttackRelease(note, '4n');
     }
+  }
+
+  /**
+   * Binaural Era Comparator: Plays valA in Left Ear and valB in Right Ear simultaneously.
+   * If valA == valB, listener hears pure acoustic unison.
+   * If valB differs, listener hears acoustic beating / harmonic divergence.
+   */
+  async function playBinauralComparison(valA, valB, storyData) {
+    await ensureInit();
+    if (!ready || !binauralLeftSynth || !binauralRightSynth) return;
+
+    const midiA = pitchForValue(valA, storyData);
+    const midiB = pitchForValue(valB, storyData);
+
+    const noteA = Tone.Frequency(midiA, 'midi').toNote();
+    const noteB = Tone.Frequency(midiB, 'midi').toNote();
+
+    binauralLeftSynth.triggerAttackRelease(noteA, '2n');
+    binauralRightSynth.triggerAttackRelease(noteB, '2n');
+  }
+
+  /**
+   * Fires an alert sonar ping for anomaly screening.
+   */
+  async function triggerAnomalySonar(pitchMidi = 88) {
+    await ensureInit();
+    if (!ready || !anomalyPing) return;
+    const note = Tone.Frequency(pitchMidi, 'midi').toNote();
+    anomalyPing.triggerAttackRelease(note, '16n');
   }
 
   function getWaveformData() {
@@ -457,6 +502,8 @@ const AudioEngine = (() => {
     setRate,
     setVolume,
     playSample,
+    playBinauralComparison,
+    triggerAnomalySonar,
     dispose,
     getWaveformData,
     get isPlaying()    { return isPlaying; },

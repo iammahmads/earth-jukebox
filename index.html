@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Earth Jukebox — NASA Earth Data Sonification</title>
-  <meta name="description" content="Hear Earth's climate through sound. 5 NASA time series. NASA Space Apps 2026.">
+  <title>Earth Jukebox — Applied NASA Earth Science Sonification Workstation</title>
+  <meta name="description" content="Applied Earth observation sonification workstation: BVI science accessibility, binaural climate comparison, and aural anomaly screening. NASA Space Apps 2026.">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="assets/favicon.ico">
@@ -12,17 +12,18 @@
 <body>
   <a href="#main" class="skip-link">Skip to main content</a>
 
-  <!-- ═══ TOP NAV ═══ -->
+  <!-- ═══ TOP MISSION CONTROL NAV ═══ -->
   <nav class="topnav" role="navigation" aria-label="Application navigation">
     <div class="topnav-inner">
       <div class="brand">
         <div class="brand-orb" aria-hidden="true"><span class="brand-pulse"></span>🌍</div>
         <div>
           <span class="brand-name">EARTH JUKEBOX</span>
-          <span class="brand-sub">NASA Space Apps 2026</span>
+          <span class="brand-sub">NASA Applied Climate Sonification Workstation</span>
         </div>
       </div>
 
+      <!-- Live Mission Telemetry -->
       <div class="telemetry" aria-label="Mission telemetry" aria-live="polite">
         <div class="tel-block" id="tel-status-block">
           <div class="tel-dot" id="tel-dot"></div>
@@ -46,8 +47,8 @@
       </div>
 
       <div class="nav-badges">
-        <span class="pill pill-nasa">NASA DATA</span>
-        <span class="pill pill-live" id="pill-live" hidden>◉ LIVE</span>
+        <span class="pill pill-nasa">NASA SPACE APPS 2026</span>
+        <span class="pill pill-live" id="pill-live" hidden>◉ LIVE RUN</span>
       </div>
     </div>
   </nav>
@@ -55,183 +56,375 @@
   <!-- ═══ MAIN ═══ -->
   <main id="main">
 
-    <!-- ──────────── LANDING ──────────── -->
-    <section id="view-landing" class="view" aria-label="Story Selection">
+    <!-- ──────────── LANDING VIEW ──────────── -->
+    <section id="view-landing" class="view" aria-label="Story Selection and Use Cases">
 
+      <!-- Real-World Purpose & Impact Banner -->
+      <div class="mission-purpose-card">
+        <div class="purpose-badge">REAL-WORLD SCIENTIFIC IMPACT</div>
+        <h2>Turning Inaccessible Satellite Visuals into Decipherable Sound</h2>
+        <p>
+          NASA collects petabytes of Earth imagery every day. But <strong>2.2 billion visually impaired individuals</strong> 
+          cannot inspect satellite heatmaps, and human researchers looking at hundreds of line charts suffer visual fatigue. 
+          <strong>Earth Jukebox</strong> solves both problems: human hearing has superior temporal acuity to the human eye, 
+          enabling rapid <em>aural screening</em> of climate anomalies, binaural era comparison, and fully accessible GIS science.
+        </p>
+
+        <!-- 3 Core Applied Use Cases -->
+        <div class="usecases-grid">
+          <div class="usecase-card">
+            <span class="usecase-icon">♿</span>
+            <div class="usecase-body">
+              <strong>1. BVI Earth Science Accessibility</strong>
+              <p>Enables blind and low-vision scientists and students to explore NASA GIS datasets by ear, navigating multi-year climate trends via pitch intervals and tactile acoustic cursors.</p>
+            </div>
+          </div>
+          <div class="usecase-card">
+            <span class="usecase-icon">🔍</span>
+            <div class="usecase-body">
+              <strong>2. Aural Anomaly Screening</strong>
+              <p>The human ear can detect transient micro-deviations (2–5 ms) that visual chart-smoothing hides. Automates statistical outlier detection with instant acoustic sonar alarms.</p>
+            </div>
+          </div>
+          <div class="usecase-card">
+            <span class="usecase-icon">⚖️</span>
+            <div class="usecase-body">
+              <strong>3. Binaural Era Comparator</strong>
+              <p>Plays a historical baseline in the Left Ear and modern anomaly in the Right Ear. Harmonic consonance indicates stability; dissonance and acoustic beating reveal climate destabilization.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hero Visualizer -->
       <div class="landing-hero">
         <div class="hero-text">
-          <h1>Hear Earth's Climate,<br><span class="hero-accent">Through Sound</span></h1>
+          <h1>Select a Verified<br><span class="hero-accent">NASA Climate Series</span></h1>
           <p class="hero-desc">
-            Five real NASA datasets — temperature, rainfall, heatwaves — transformed into pitch, rhythm and timbre.
-            Each story is a different Earth observation told entirely through sound.
+            Explore 5 global climate datasets from NASA POWER, VEDA, and GIBS. Each story implements distinct 
+            synthesis architecture, synced satellite imagery, and quantitative anomaly diagnostics.
           </p>
         </div>
         <div class="hero-viz" aria-hidden="true">
-          <canvas id="hero-canvas" width="320" height="160"></canvas>
+          <canvas id="hero-canvas" width="320" height="150"></canvas>
         </div>
       </div>
 
-      <div class="section-label">SELECT A STORY</div>
+      <div class="section-label">CHOOSE DATASET TO LAUNCH WORKSTATION</div>
       <div id="stories-grid" class="stories-grid" role="list">
-        <!-- Injected by app.js -->
+        <!-- Injected dynamically by app.js -->
       </div>
 
+      <!-- How Sound is Made Reference -->
       <div class="how-section">
-        <div class="section-label">HOW SOUND IS MADE</div>
+        <div class="section-label">ACOUSTIC MAPPING METHODOLOGY</div>
         <div class="how-grid">
           <div class="how-card">
             <span class="how-icon">🎵</span>
             <strong>Value → Pitch</strong>
-            <p>Low value = deep tone (C3). High value = bright tone (C6). Every note is a real data point.</p>
+            <p>Monotonic linear mapping from $[min, max]$ to MIDI 48 (C3, 130.8 Hz) through MIDI 84 (C6, 1046.5 Hz).</p>
           </div>
           <div class="how-card">
             <span class="how-icon">🎻</span>
             <strong>Variability → Timbre</strong>
-            <p>Uniform conditions = pure sine wave. High spatial chaos = rich sawtooth harmonics.</p>
+            <p>Uniform spatial data = pure sine wave; high spatial entropy = rich harmonic sawtooth wave.</p>
           </div>
           <div class="how-card">
             <span class="how-icon">⏱</span>
             <strong>Change Rate → Tempo</strong>
-            <p>Slow change = calm 60 BPM. Rapid anomaly = urgent 160 BPM pulse.</p>
+            <p>Dynamic playback pace: stable periods = 60 BPM; rapid anomalous swings = 160 BPM.</p>
           </div>
           <div class="how-card">
             <span class="how-icon">🚨</span>
             <strong>Thresholds → Alarm</strong>
-            <p>Crossing critical limits triggers a layered alarm bell and screen flash.</p>
+            <p>Crossing critical limits triggers a layered bell chime + noise burst and screen flash.</p>
           </div>
           <div class="how-card">
             <span class="how-icon">🎙</span>
             <strong>Story Persona</strong>
-            <p>Each story has its own synth: AM Flute · FM Drift · Crisis Distortion · Rain Pad · Wildfire Lead.</p>
+            <p>Each story features dedicated synthesis: AM Flute · FM Drift · Crisis Distortion · Rain Pad · Wildfire Lead.</p>
           </div>
           <div class="how-card">
             <span class="how-icon">🌐</span>
             <strong>Longitude → Stereo Pan</strong>
-            <p>Western regions pan left; Eastern regions pan right — adding spatial dimension.</p>
+            <p>Geographic coordinates pan audio from Left channel (−180°) to Right channel (+180°).</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ──────────── PLAYER ──────────── -->
-    <section id="view-player" class="view" hidden aria-label="Story Player">
+    <!-- ──────────── PLAYER WORKSTATION VIEW ──────────── -->
+    <section id="view-player" class="view" hidden aria-label="Interactive Climate Sonification Workstation">
 
-      <div class="player-layout">
+      <!-- Workstation Mode Bar (The 4 Real-World Scientific Workstation Tools) -->
+      <div class="workstation-nav-bar" role="navigation" aria-label="Workstation Tools">
+        <button id="btn-back" class="ctrl-back" aria-label="Return to catalog">← CATALOG</button>
 
-        <!-- LEFT: Map + Viz -->
-        <div class="player-left">
-
-          <!-- Story selector tabs -->
-          <div class="story-tabs" id="story-tabs" role="tablist" aria-label="Switch story">
-            <!-- Injected by app.js -->
-          </div>
-
-          <!-- Data Visualization Canvas overlaid on map -->
-          <div class="map-container" role="region" aria-label="Synchronized satellite map">
-            <!-- Instant visual canvas (always in sync) -->
-            <canvas id="data-viz-canvas" class="data-viz-canvas" aria-hidden="true"></canvas>
-            <!-- Leaflet map (satellite imagery, may lag slightly) -->
-            <div id="map"></div>
-            <!-- Map overlay chips -->
-            <div class="map-chip top-left" id="chip-date" aria-hidden="true">📅 —</div>
-            <div class="map-chip top-right" id="chip-dataset" aria-hidden="true">NASA POWER</div>
-            <div class="map-chip bottom-right" id="chip-sync" aria-hidden="true">
-              <span class="live-dot-sm" id="live-dot-sm"></span> SYNCED
-            </div>
-          </div>
-
-          <!-- Oscilloscope waveform -->
-          <div class="osc-wrapper" aria-hidden="true">
-            <span class="osc-label">AUDIO WAVEFORM</span>
-            <canvas id="waveform-canvas" class="osc-canvas"></canvas>
-          </div>
-
+        <div class="workstation-tabs" role="tablist">
+          <button class="ws-tab active" id="tab-mode-explorer" role="tab" aria-selected="true" data-mode="explorer">
+            🎯 Mission Explorer
+          </button>
+          <button class="ws-tab" id="tab-mode-comparator" role="tab" aria-selected="false" data-mode="comparator">
+            ⚖️ Binaural Era Comparator
+          </button>
+          <button class="ws-tab" id="tab-mode-scanner" role="tab" aria-selected="false" data-mode="scanner">
+            🔍 Aural Anomaly Scanner
+          </button>
+          <button class="ws-tab" id="tab-mode-accessibility" role="tab" aria-selected="false" data-mode="accessibility">
+            ♿ Accessible Earth Lab
+          </button>
         </div>
 
-        <!-- RIGHT: Readout + Controls -->
-        <div class="player-right">
+        <button id="btn-export-report" class="btn-export" title="Export Scientific Diagnostics & Anomaly Report">
+          📋 Export Science Report
+        </button>
+      </div>
 
-          <!-- Big metric readout -->
-          <div class="metric-panel" id="metric-panel">
-            <div class="metric-top">
-              <span class="metric-story-name" id="mp-story-name">—</span>
-              <span class="metric-frame-counter" id="mp-frame">— / —</span>
-            </div>
-            <div class="metric-date" id="mp-date">—</div>
-            <div class="metric-value-row">
-              <span class="metric-value" id="mp-value">—</span>
-              <span class="metric-unit" id="mp-unit">—</span>
-            </div>
-            <div class="metric-intensity-wrap" aria-hidden="true">
-              <div class="metric-intensity-track">
-                <div class="metric-intensity-bar" id="mp-bar"></div>
-                <div class="metric-intensity-cursor" id="mp-cursor"></div>
+      <!-- Story selector tabs (1 to 5) -->
+      <div class="story-tabs" id="story-tabs" role="tablist" aria-label="Switch story">
+        <!-- Injected by app.js -->
+      </div>
+
+      <!-- WORKSTATION TOOL PANELS -->
+
+      <!-- ═══ TOOL 1: MISSION EXPLORER (Default Synchronized Map + Visualizer) ═══ -->
+      <div id="panel-explorer" class="ws-panel active">
+        <div class="player-layout">
+
+          <!-- LEFT: Map + Instant Canvas Viz -->
+          <div class="player-left">
+            <div class="map-container" role="region" aria-label="Synchronized satellite map">
+              <canvas id="data-viz-canvas" class="data-viz-canvas" aria-hidden="true"></canvas>
+              <div id="map"></div>
+              <div class="map-chip top-left" id="chip-date" aria-hidden="true">📅 —</div>
+              <div class="map-chip top-right" id="chip-dataset" aria-hidden="true">NASA POWER</div>
+              <div class="map-chip bottom-right" id="chip-sync" aria-hidden="true">
+                <span class="live-dot-sm" id="live-dot-sm"></span> SYNCED
               </div>
-              <div class="metric-intensity-labels">
-                <span id="mp-low">—</span>
-                <span id="mp-high">—</span>
-              </div>
             </div>
-            <!-- ARIA live region -->
-            <p class="sr-only" id="live-readout" aria-live="polite" aria-atomic="true">Ready.</p>
+
+            <!-- Oscilloscope waveform -->
+            <div class="osc-wrapper" aria-hidden="true">
+              <span class="osc-label">REAL-TIME WEB AUDIO ANALYSER (60 FPS)</span>
+              <canvas id="waveform-canvas" class="osc-canvas"></canvas>
+            </div>
           </div>
 
-          <!-- Alert banner -->
-          <div class="alert-panel" id="alert-panel" hidden role="alert" aria-live="assertive">
-            <span class="alert-icon-big">🚨</span>
+          <!-- RIGHT: Readout + Legend -->
+          <div class="player-right">
+            <!-- Big Metric Panel -->
+            <div class="metric-panel" id="metric-panel">
+              <div class="metric-top">
+                <span class="metric-story-name" id="mp-story-name">—</span>
+                <span class="metric-frame-counter" id="mp-frame">— / —</span>
+              </div>
+              <div class="metric-date" id="mp-date">—</div>
+              <div class="metric-value-row">
+                <span class="metric-value" id="mp-value">—</span>
+                <span class="metric-unit" id="mp-unit">—</span>
+              </div>
+              <div class="metric-intensity-wrap" aria-hidden="true">
+                <div class="metric-intensity-track">
+                  <div class="metric-intensity-bar" id="mp-bar"></div>
+                  <div class="metric-intensity-cursor" id="mp-cursor"></div>
+                </div>
+                <div class="metric-intensity-labels">
+                  <span id="mp-low">—</span>
+                  <span id="mp-high">—</span>
+                </div>
+              </div>
+              <p class="sr-only" id="live-readout" aria-live="polite" aria-atomic="true">Ready.</p>
+            </div>
+
+            <!-- Alert banner -->
+            <div class="alert-panel" id="alert-panel" hidden role="alert" aria-live="assertive">
+              <span class="alert-icon-big">🚨</span>
+              <div>
+                <strong>THRESHOLD EXCEEDED</strong>
+                <p id="alert-text">—</p>
+              </div>
+            </div>
+
+            <!-- Climate Narrative -->
+            <div class="info-card">
+              <div class="info-card-title">📡 SCIENTIFIC NARRATIVE</div>
+              <p id="narrative" class="narrative-text">—</p>
+            </div>
+
+            <!-- Sound Legend -->
+            <div class="info-card">
+              <div class="info-card-title-row">
+                <span class="info-card-title">🎧 SOUND SPECIFICATION</span>
+                <span class="synth-pill" id="synth-pill">—</span>
+              </div>
+              <div class="legend-gradient-row">
+                <span class="legend-minmax" id="leg-min">—</span>
+                <div class="legend-gradient" id="leg-gradient"></div>
+                <span class="legend-minmax" id="leg-max">—</span>
+              </div>
+              <div class="threshold-line" id="leg-threshold">Threshold alert: none</div>
+              <div class="sample-row" role="group" aria-label="Preview sounds">
+                <span class="sample-label">PREVIEW:</span>
+                <button class="btn-sample" data-sample="low" aria-label="Low note">LOW</button>
+                <button class="btn-sample" data-sample="mid" aria-label="Mid note">MID</button>
+                <button class="btn-sample" data-sample="high" aria-label="High note">HIGH</button>
+                <button class="btn-sample btn-sample-alert" data-sample="marker" aria-label="Alert chime">🚨 ALARM</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TOOL 2: BINAURAL CLIMATE ERA COMPARATOR ═══ -->
+      <div id="panel-comparator" class="ws-panel" hidden aria-label="Binaural Era Comparator">
+        <div class="comparator-card">
+          <div class="comparator-header">
+            <h3>⚖️ Binaural Climate Era Comparator (A/B Harmonic Acoustic Beating)</h3>
+            <p>
+              Compare two different time periods simultaneously in your headphones. 
+              <strong>Left Ear plays Era A (Baseline)</strong>; <strong>Right Ear plays Era B (Comparison)</strong>. 
+              If the values match, you hear pure acoustic consonance. As climate warming creates a gap, 
+              the pitch difference causes <strong>acoustic beating and harmonic dissonance</strong>!
+            </p>
+          </div>
+
+          <div class="comparator-grid">
+            <!-- Era A (Left Ear) -->
+            <div class="era-box era-left">
+              <div class="era-tag">LEFT EAR 🎧 (ERA A BASELINE)</div>
+              <label for="comp-slider-a" class="era-label">Select Era A Date:</label>
+              <input type="range" id="comp-slider-a" class="era-slider" min="0" max="100" value="0">
+              <div class="era-readout">
+                <span class="era-date" id="comp-date-a">—</span>
+                <span class="era-val" id="comp-val-a">—</span>
+              </div>
+              <div class="era-freq" id="comp-freq-a">Frequency: — Hz</div>
+            </div>
+
+            <!-- Inter-era Acoustic Delta Box -->
+            <div class="delta-box">
+              <div class="delta-title">CLIMATE ACOUSTIC DELTA</div>
+              <div class="delta-val" id="comp-delta-temp">+0.0°</div>
+              <div class="delta-interval" id="comp-delta-interval">Unison (0 cents)</div>
+              <div class="delta-desc" id="comp-delta-desc">Identical values: perfect harmonic unison.</div>
+              <button id="btn-comp-play" class="btn-comp-play">
+                ▶ Listen to Binaural Beating
+              </button>
+            </div>
+
+            <!-- Era B (Right Ear) -->
+            <div class="era-box era-right">
+              <div class="era-tag">RIGHT EAR 🎧 (ERA B COMPARISON)</div>
+              <label for="comp-slider-b" class="era-label">Select Era B Date:</label>
+              <input type="range" id="comp-slider-b" class="era-slider" min="0" max="100" value="10">
+              <div class="era-readout">
+                <span class="era-date" id="comp-date-b">—</span>
+                <span class="era-val" id="comp-val-b">—</span>
+              </div>
+              <div class="era-freq" id="comp-freq-b">Frequency: — Hz</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TOOL 3: AURAL ANOMALY SCANNER ═══ -->
+      <div id="panel-scanner" class="ws-panel" hidden aria-label="Aural Anomaly Scanner">
+        <div class="scanner-card">
+          <div class="scanner-header">
             <div>
-              <strong>THRESHOLD EXCEEDED</strong>
-              <p id="alert-text">—</p>
+              <h3>🔍 Aural Climate Anomaly Scanner & Outlier Diagnostics</h3>
+              <p>
+                The human ear detects micro-temporal changes faster than the eye scanning charts. 
+                This tool automatically computes mean ($\mu$) and standard deviation ($\sigma$), 
+                screening for all observations exceeding the $2\sigma$ climate anomaly threshold.
+              </p>
+            </div>
+            <div class="scanner-actions">
+              <button id="btn-start-scanner" class="btn-scanner-start">
+                ▶ Run High-Speed Acoustic Sonar Scan
+              </button>
             </div>
           </div>
 
-          <!-- Narrative -->
-          <div class="info-card">
-            <div class="info-card-title">📡 CLIMATE NARRATIVE</div>
-            <p id="narrative" class="narrative-text">—</p>
-          </div>
-
-          <!-- Sound Legend -->
-          <div class="info-card">
-            <div class="info-card-title-row">
-              <span class="info-card-title">🎧 SOUND LEGEND</span>
-              <span class="synth-pill" id="synth-pill">—</span>
+          <!-- Statistical Summary Metrics -->
+          <div class="scanner-stats-bar">
+            <div class="stat-pill">
+              <span class="stat-k">TOTAL FRAMES</span>
+              <span class="stat-v" id="scan-total">—</span>
             </div>
-
-            <div class="legend-gradient-row">
-              <span class="legend-minmax" id="leg-min">—</span>
-              <div class="legend-gradient" id="leg-gradient"></div>
-              <span class="legend-minmax" id="leg-max">—</span>
+            <div class="stat-pill">
+              <span class="stat-k">MEAN (μ)</span>
+              <span class="stat-v" id="scan-mean">—</span>
             </div>
-            <div class="threshold-line" id="leg-threshold">Threshold alert: none</div>
-
-            <div class="sample-row" role="group" aria-label="Preview sounds">
-              <span class="sample-label">PREVIEW:</span>
-              <button class="btn-sample" data-sample="low" aria-label="Low note">LOW</button>
-              <button class="btn-sample" data-sample="mid" aria-label="Mid note">MID</button>
-              <button class="btn-sample" data-sample="high" aria-label="High note">HIGH</button>
-              <button class="btn-sample btn-sample-alert" data-sample="marker" aria-label="Alert sound">🚨 ALARM</button>
+            <div class="stat-pill">
+              <span class="stat-k">STD DEV (σ)</span>
+              <span class="stat-v" id="scan-std">—</span>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-k">ANOMALIES (&gt;2σ)</span>
+              <span class="stat-v" id="scan-anomalies-count" style="color:var(--red)">—</span>
             </div>
           </div>
 
-          <!-- Keyboard hints -->
-          <div class="kbd-hints" aria-hidden="true">
-            <span><kbd>Space</kbd> Play/Pause</span>
-            <span><kbd>←</kbd><kbd>→</kbd> Step</span>
-            <span><kbd>1–5</kbd> Story</span>
-            <span><kbd>Esc</kbd> Catalog</span>
+          <!-- Anomaly Table -->
+          <div class="anomaly-table-wrapper">
+            <table class="anomaly-table" aria-label="Detected climate shockframes">
+              <thead>
+                <tr>
+                  <th>DATE</th>
+                  <th>OBSERVED VALUE</th>
+                  <th>BASELINE DEVIATION</th>
+                  <th>ANOMALY SEVERITY (σ)</th>
+                  <th>ACTION</th>
+                </tr>
+              </thead>
+              <tbody id="anomaly-table-body">
+                <tr><td colspan="5" style="text-align:center;color:var(--muted)">Run scanner or load story to detect anomalies...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TOOL 4: ACCESSIBLE EARTH LAB (BVI Screen-Reader Explorer) ═══ -->
+      <div id="panel-accessibility" class="ws-panel" hidden aria-label="Accessible Earth Lab">
+        <div class="bvi-card">
+          <h3>♿ Accessible Earth Science Laboratory (BVI Research Lab)</h3>
+          <p>
+            Designed for blind and low-vision scientists, students, and educators. 
+            Provides an acoustic pitch ruler, tactile sound scrubbing, and real-time verbalization of rate-of-change and climate velocity.
+          </p>
+
+          <div class="bvi-grid">
+            <!-- Verbalizer Box -->
+            <div class="bvi-verbalizer" aria-live="polite">
+              <div class="bvi-title">AUDIO DESCRIPTIVE VERBALIZER</div>
+              <p id="bvi-speech-text">Ready. Use Arrow keys to navigate or press Space to play.</p>
+              <div class="bvi-metrics">
+                <span id="bvi-slope-metric">Rate of Change: —</span>
+                <span id="bvi-pitch-metric">Acoustic Pitch: —</span>
+              </div>
+            </div>
+
+            <!-- Pitch Ruler -->
+            <div class="bvi-ruler">
+              <div class="bvi-title">ACOUSTIC PITCH RULER (C3 → C6)</div>
+              <div class="ruler-buttons">
+                <button class="btn-ruler" data-note="48">C3 (Baseline Min)</button>
+                <button class="btn-ruler" data-note="55">G3 (Lower Tier)</button>
+                <button class="btn-ruler" data-note="60">C4 (Middle Tier)</button>
+                <button class="btn-ruler" data-note="67">G4 (Upper Tier)</button>
+                <button class="btn-ruler" data-note="72">C5 (Warm Anomaly)</button>
+                <button class="btn-ruler" data-note="84">C6 (Historic Peak)</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- ═══ PLAYBACK CONTROLS BAR ═══ -->
       <div class="controls-bar" role="region" aria-label="Playback controls">
-
         <div class="controls-top">
-          <!-- Back button -->
-          <button id="btn-back" class="ctrl-back" aria-label="Back to story catalog">← CATALOG</button>
-
-          <!-- Transport -->
           <div class="transport">
             <button id="btn-prev" class="ctrl-btn" title="Step back (← Arrow)" aria-label="Step back one frame">⏮</button>
             <button id="btn-play" class="ctrl-play" aria-label="Play" aria-pressed="false">
@@ -240,7 +433,6 @@
             <button id="btn-next" class="ctrl-btn" title="Step forward (→ Arrow)" aria-label="Step forward one frame">⏭</button>
           </div>
 
-          <!-- Speed + Volume -->
           <div class="ctrl-row-right">
             <label class="ctrl-mini-label" for="speed-sel">SPEED</label>
             <select id="speed-sel" class="ctrl-select" aria-label="Playback speed">
@@ -250,7 +442,7 @@
               <option value="2.0">2×</option>
               <option value="3.0">3×</option>
             </select>
-            <label class="ctrl-mini-label" for="vol-rng">VOL</label>
+            <label class="ctrl-mini-label" for="vol-rng">GAIN</label>
             <input type="range" id="vol-rng" class="ctrl-vol" min="-10" max="12" value="4" step="1" aria-label="Master Volume">
           </div>
         </div>
@@ -270,17 +462,34 @@
     </section>
   </main>
 
+  <!-- ═══ REPORT MODAL (For Exporting Scientific Diagnostics) ═══ -->
+  <dialog id="report-modal" class="report-modal" aria-labelledby="modal-title">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <h3 id="modal-title">📋 NASA Climate Sonification Diagnostics Report</h3>
+        <button id="btn-close-modal" class="btn-close" aria-label="Close dialog">✕</button>
+      </div>
+      <div class="modal-body">
+        <pre id="report-content" class="report-code"></pre>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-copy-report" class="btn-modal-action">📋 Copy to Clipboard</button>
+        <button id="btn-download-report" class="btn-modal-action btn-modal-primary">💾 Download Report (.txt)</button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- ═══ FOOTER ═══ -->
   <footer class="app-footer" role="contentinfo">
-    <span>🌍 <strong>Earth Jukebox</strong> — NASA Space Apps 2026 · Solo</span>
-    <span>Data: NASA POWER · NASA GIBS · NASA VEDA</span>
-    <span>Imagery: NASA/GSFC/ESDIS (GIBS)</span>
+    <span>🌍 <strong>Earth Jukebox</strong> — Applied NASA Climate Sonification Workstation (Solo Build)</span>
+    <span>Datasets: NASA POWER · NASA GIBS · NASA VEDA</span>
+    <span>Imagery: NASA/GSFC/ESDIS (GIBS WMTS)</span>
   </footer>
 
   <!-- Threshold flash overlay -->
   <div id="flash-overlay" class="flash-overlay" aria-hidden="true"></div>
 
-  <!-- CDN -->
+  <!-- CDN Dependencies -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
   <script src="audio.js"></script>
