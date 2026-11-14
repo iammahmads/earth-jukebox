@@ -1,484 +1,493 @@
 /**
- * Earth Jukebox — UI Application Controller (app.js)
- * NASA Space Apps 2026
+ * Earth Jukebox — Application Controller v2 (app.js)
+ * NASA Mission Control UI + Live Oscilloscope + Threshold Alarm System
  */
-
 (function () {
   'use strict';
 
-  // State
-  let stories = [];
-  let currentStoryMeta = null;
-  let currentStoryData = null;
-  let leafletMap = null;
-  let gibsTileLayer = null;
-  let bboxOverlay = null;
-  let lastTileDate = null;
+  // ─── State ───────────────────────────────────────────────────────────────
+  let stories        = [];
+  let curMeta        = null;
+  let curData        = null;
+  let leafletMap     = null;
+  let gibsLayer      = null;
+  let bboxRect       = null;
+  let lastTileDate   = null;
+  let waveformRAF    = null;
 
-  // DOM Elements
-  const landingView = document.getElementById('landing-view');
-  const playerView = document.getElementById('player-view');
-  const storiesGrid = document.getElementById('stories-grid');
-  const btnBackCatalog = document.getElementById('btn-back-catalog');
+  // ─── DOM Refs ─────────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const landingView = $('landing-view');
+  const playerView  = $('player-view');
+  const storiesGrid = $('stories-grid');
 
-  // Player Elements
-  const playerStoryTitle = document.getElementById('player-story-title');
-  const playerStorySubtitle = document.getElementById('player-story-subtitle');
-  const playerShapeBadge = document.getElementById('player-shape-badge');
-  const playerSourceBadge = document.getElementById('player-source-badge');
-  const frameCounter = document.getElementById('frame-counter');
-  const visibleDate = document.getElementById('visible-date');
-  const visibleValue = document.getElementById('visible-value');
-  const chipDate = document.getElementById('chip-date');
-  const liveReadout = document.getElementById('live-readout');
-  const storySummaryText = document.getElementById('story-summary-text');
-  
-  // Legend Elements
-  const legendMinVal = document.getElementById('legend-min-val');
-  const legendMaxVal = document.getElementById('legend-max-val');
-  const legendThreshVal = document.getElementById('legend-thresh-val');
-  const sampleButtons = document.querySelectorAll('.btn-sample');
+  // Telemetry
+  const telMission = $('tel-mission');
+  const telFrame   = $('tel-frame');
+  const telDate    = $('tel-date');
+  const telValue   = $('tel-value');
+  const statusDot  = $('status-dot');
+  const statusLabel= $('status-label');
 
-  // Controls Elements
-  const btnPlayPause = document.getElementById('btn-play-pause');
-  const playIcon = document.getElementById('play-icon');
-  const playText = document.getElementById('play-text');
-  const btnStepBack = document.getElementById('btn-step-back');
-  const btnStepForward = document.getElementById('btn-step-forward');
-  const timelineScrubber = document.getElementById('timeline-scrubber');
-  const timelineStartDate = document.getElementById('timeline-start-date');
-  const timelineEndDate = document.getElementById('timeline-end-date');
-  const timelineEventMarker = document.getElementById('timeline-event-marker');
-  const selectSpeed = document.getElementById('select-speed');
-  const sliderVolume = document.getElementById('slider-volume');
+  // Player
+  const playerTitle    = $('player-title');
+  const playerSubtitle = $('player-subtitle');
+  const playerShapeBadge = $('player-shape-badge');
+  const playerSynthBadge = $('player-synth-badge');
+  const frameCounter   = $('frame-counter');
+  const visDate        = $('vis-date');
+  const visValue       = $('vis-value');
+  const visUnit        = $('vis-unit');
+  const liveReadout    = $('live-readout');
+  const alertBanner    = $('alert-banner');
+  const alertMessage   = $('alert-message');
+  const threshFlash    = $('threshold-flash');
+  const narrativeText  = $('narrative-text');
+  const metricCard     = $('metric-card');
+  const intensityFill  = $('intensity-fill');
+  const intensityPtr   = $('intensity-pointer');
+  const rangeLowLabel  = $('range-low-label');
+  const rangeHighLabel = $('range-high-label');
 
-  // Meta Footer
-  const metaDatasetName = document.getElementById('meta-dataset-name');
-  const metaBboxCoords = document.getElementById('meta-bbox-coords');
-  const gibsLayerLabel = document.getElementById('gibs-layer-label');
-  const mapCoordinatesLabel = document.getElementById('map-coordinates-label');
+  // Legend
+  const scaleLegendMin = $('scale-min-label');
+  const scaleLegendMax = $('scale-max-label');
+  const threshNote     = $('thresh-note');
+  const synthLabelTag  = $('synth-label-tag');
 
-  /**
-   * Initializes the application: loads stories catalog.
-   */
-  async function initApp() {
+  // Map chips
+  const chipDate    = $('chip-date');
+  const chipLayer   = $('chip-layer');
+  const chipDataset = $('chip-dataset');
+
+  // Controls
+  const btnBack      = $('btn-back');
+  const btnPlay      = $('btn-play');
+  const playGlyph    = $('play-glyph');
+  const playLabel    = $('play-label');
+  const btnStepBack  = $('btn-step-back');
+  const btnStepFwd   = $('btn-step-fwd');
+  const scrubber     = $('scrubber');
+  const tlStart      = $('tl-start');
+  const tlEnd        = $('tl-end');
+  const tlAlertPip   = $('timeline-alert-pip');
+  const speedSelect  = $('speed-select');
+  const volSlider    = $('vol-slider');
+
+  // Meta
+  const metaDataset = $('meta-dataset');
+  const metaSource  = $('meta-source');
+  const metaArea    = $('meta-area');
+  const metaBbox    = $('meta-bbox');
+
+  // Waveform
+  const waveCanvas  = $('waveform-canvas');
+  const waveCtx     = waveCanvas ? waveCanvas.getContext('2d') : null;
+
+  // ─── Boot ────────────────────────────────────────────────────────────────
+  async function init() {
     try {
       const res = await fetch('stories.json');
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       stories = await res.json();
-      renderStoriesCatalog(stories);
-    } catch (err) {
-      console.error('Failed to load stories.json:', err);
-      storiesGrid.innerHTML = `
-        <div class="card-desc" style="color:var(--accent-red)">
-          Error loading stories catalog. Please ensure you are serving this folder via a local web server (e.g., python3 -m http.server 8000).
-        </div>`;
+      renderCatalog(stories);
+    } catch (e) {
+      storiesGrid.innerHTML = `<p style="color:var(--red);font-size:.85rem">
+        Failed to load stories.json — please serve this directory with a local web server:<br>
+        <code>python3 -m http.server 8000</code></p>`;
     }
-
-    setupEventListeners();
-    setupAudioEngineCallbacks();
+    wireControls();
+    wireAudioCallbacks();
+    startWaveformLoop();
   }
 
-  /**
-   * Renders the story selection cards on the landing view.
-   */
-  function renderStoriesCatalog(storyList) {
+  // ─── Catalog ─────────────────────────────────────────────────────────────
+  function renderCatalog(list) {
     storiesGrid.innerHTML = '';
-    storyList.forEach((story, idx) => {
+    const synthNames = {
+      'story-1-seasonal': 'AM Flute Synthesis',
+      'story-2-trend':    'FM Drift Synthesis',
+      'story-3-event':    'Crisis Distortion'
+    };
+    list.forEach((s, i) => {
       const card = document.createElement('article');
       card.className = 'story-card';
       card.tabIndex = 0;
       card.setAttribute('role', 'listitem');
-      card.setAttribute('aria-label', `Select Story ${idx + 1}: ${story.title}`);
+      card.setAttribute('aria-label', `Story ${i+1}: ${s.title}`);
+      card.style.setProperty('--accent-color', s.accent_color || 'var(--cyan)');
 
-      let badgeClass = 'badge-seasonal';
-      if (story.shape === 'trend') badgeClass = 'badge-trend';
-      if (story.shape === 'event') badgeClass = 'badge-event';
-
+      const badgeClass = {seasonal:'badge-seasonal',trend:'badge-trend',event:'badge-event'}[s.shape] || '';
       card.innerHTML = `
         <div>
-          <div class="card-header-row">
-            <span class="card-icon" aria-hidden="true">${story.icon || '🌍'}</span>
-            <span class="badge ${badgeClass}">${story.badge || story.shape}</span>
+          <div class="sc-header">
+            <span class="sc-icon" aria-hidden="true">${s.icon||'🌍'}</span>
+            <span class="sc-num">STORY ${i+1} · <span class="badge ${badgeClass}">${s.badge||s.shape}</span></span>
           </div>
-          <h3 class="card-title">${story.title}</h3>
-          <p class="card-subtitle">${story.subtitle}</p>
-          <p class="card-desc">${story.description}</p>
+          <h3 class="sc-title">${s.title}</h3>
+          <p class="sc-subtitle">${s.subtitle}</p>
+          <p class="sc-desc">${s.description}</p>
         </div>
-        <div class="card-cta">
-          <span>Explore Sonification →</span>
-          <span>Shortcut [${idx + 1}]</span>
-        </div>
-      `;
+        <div class="sc-footer">
+          <span class="sc-synth-label">🎵 ${synthNames[s.id]||'Synthesis Engine'}</span>
+          <span class="sc-cta">LAUNCH [${i+1}] →</span>
+        </div>`;
 
-      card.addEventListener('click', () => loadStory(story));
-      card.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          loadStory(story);
-        }
-      });
-
+      const open = () => loadStory(s);
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); open(); } });
       storiesGrid.appendChild(card);
     });
   }
 
-  /**
-   * Loads story data and transitions to player view.
-   */
-  async function loadStory(storyMeta) {
+  // ─── Load Story ──────────────────────────────────────────────────────────
+  async function loadStory(meta) {
     try {
-      currentStoryMeta = storyMeta;
-      const res = await fetch(storyMeta.data_file);
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-      currentStoryData = await res.json();
-      
-      setupPlayerView(currentStoryMeta, currentStoryData);
-    } catch (err) {
-      console.error(`Failed to load data for ${storyMeta.id}:`, err);
-      alert(`Could not load story dataset (${storyMeta.data_file}). Check network or file permissions.`);
+      const res = await fetch(meta.data_file);
+      if (!res.ok) throw new Error(res.status);
+      curData = await res.json();
+      curMeta = meta;
+      setupPlayer(meta, curData);
+    } catch (e) {
+      alert(`Could not load ${meta.data_file}. Run: python3 -m http.server 8000`);
     }
   }
 
-  /**
-   * Configures player UI with loaded story dataset.
-   */
-  function setupPlayerView(meta, data) {
-    // Switch views
+  // ─── Setup Player ────────────────────────────────────────────────────────
+  function setupPlayer(meta, data) {
     landingView.hidden = true;
-    playerView.hidden = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    playerView.hidden  = false;
+    window.scrollTo({top:0, behavior:'smooth'});
 
-    // Update Header
-    playerStoryTitle.textContent = data.title || meta.title;
-    playerStorySubtitle.textContent = meta.subtitle || meta.description;
-    playerShapeBadge.textContent = meta.badge || meta.shape.toUpperCase();
-    playerShapeBadge.className = `badge badge-${meta.shape}`;
-    playerSourceBadge.textContent = data.source || 'NASA Data';
+    // Telemetry
+    telMission.textContent = meta.id.toUpperCase().replace('STORY-','S');
 
-    // Meta Footer
-    metaDatasetName.textContent = data.dataset || 'NASA Observation';
-    if (data.area && data.area.bbox) {
-      metaBboxCoords.textContent = `[${data.area.bbox.join(', ')}] — ${data.area.name || ''}`;
-      mapCoordinatesLabel.textContent = `Region: ${data.area.name || 'Target Area'}`;
-    }
-    gibsLayerLabel.textContent = meta.gibs_layer || 'MODIS TrueColor';
+    // Header
+    playerTitle.textContent    = data.title || meta.title;
+    playerSubtitle.textContent = meta.subtitle || '';
+    playerShapeBadge.textContent = (meta.badge || meta.shape).toUpperCase();
+    playerShapeBadge.className   = `badge badge-${meta.shape}`;
+    playerSynthBadge.textContent = {
+      'story-1-seasonal':'AM FLUTE',
+      'story-2-trend':'FM DRIFT',
+      'story-3-event':'CRISIS DIST.'
+    }[meta.id] || 'SYNTH';
 
-    // Scrubber Range
-    const totalFrames = data.frames.length;
-    timelineScrubber.min = 0;
-    timelineScrubber.max = totalFrames - 1;
-    timelineScrubber.value = 0;
-    timelineStartDate.textContent = data.frames[0].date;
-    timelineEndDate.textContent = data.frames[totalFrames - 1].date;
+    // Units
+    visUnit.textContent = data.units || '';
+    rangeLowLabel.textContent  = `${data.min.toFixed(1)} ${data.units}`;
+    rangeHighLabel.textContent = `${data.max.toFixed(1)} ${data.units}`;
 
-    // Threshold indicator on timeline
+    // Scrubber range
+    const total = data.frames.length;
+    scrubber.min = 0; scrubber.max = total - 1; scrubber.value = 0;
+    tlStart.textContent = data.frames[0].date;
+    tlEnd.textContent   = data.frames[total-1].date;
+
+    // Alert pip position on timeline
     if (data.threshold !== null && data.threshold !== undefined) {
-      timelineEventMarker.hidden = false;
-      timelineEventMarker.textContent = `⚠️ Threshold: ${data.threshold} ${data.units}`;
-    } else {
-      timelineEventMarker.hidden = true;
-    }
+      const threshIdx = data.frames.findIndex(f => f.value >= data.threshold);
+      if (threshIdx >= 0) {
+        tlAlertPip.hidden = false;
+        tlAlertPip.style.left = `${(threshIdx / (total-1)) * 100}%`;
+      }
+    } else { tlAlertPip.hidden = true; }
 
     // Legend
-    legendMinVal.textContent = `${data.min.toFixed(1)} ${data.units}`;
-    legendMaxVal.textContent = `${data.max.toFixed(1)} ${data.units}`;
+    scaleLegendMin.textContent = `${data.min.toFixed(1)} ${data.units}`;
+    scaleLegendMax.textContent = `${data.max.toFixed(1)} ${data.units}`;
+    synthLabelTag.textContent = playerSynthBadge.textContent;
     if (data.threshold !== null && data.threshold !== undefined) {
-      legendThreshVal.textContent = `Chimes when value crosses ${data.threshold} ${data.units}${data.threshold_date ? ' (' + data.threshold_date + ')' : ''}`;
+      threshNote.textContent = `🚨 Alert at: ${data.threshold} ${data.units}${data.threshold_date ? ' / ' + data.threshold_date : ''}`;
     } else {
-      legendThreshVal.textContent = 'None (continuous harmonic curve)';
+      threshNote.textContent = 'No threshold alert for this story';
     }
 
-    // Generate narrative summary
-    generateNarrativeSummary(data, meta);
+    // Map chips
+    chipLayer.textContent   = meta.gibs_layer ? '📡 ' + meta.gibs_layer.split('_').slice(0,2).join(' ') : '📡 NASA GIBS';
+    chipDataset.textContent = data.source || 'NASA';
 
-    // Initialize Leaflet Map
-    initOrUpdateMap(data, meta);
+    // Meta footer
+    metaDataset.textContent = data.dataset  || '—';
+    metaSource.textContent  = data.source   || 'NASA';
+    metaArea.textContent    = data.area && data.area.name ? data.area.name : '—';
+    metaBbox.textContent    = data.area && data.area.bbox ? `[${data.area.bbox.join(', ')}]` : '—';
 
-    // Feed to AudioEngine
+    // Narrative
+    buildNarrative(data, meta);
+
+    // Map init
+    initMap(data, meta);
+
+    // Hide old alert
+    alertBanner.hidden = true;
+    metricCard.classList.remove('alert-active');
+
+    // Audio
     AudioEngine.setStory(data);
-
-    // Display first frame
-    if (data.frames.length > 0) {
-      updateFrameUI(0, data.frames[0]);
-    }
+    updateFrameUI(0, data.frames[0]);
   }
 
-  /**
-   * Generates a descriptive scientific narrative for the dataset.
-   */
-  function generateNarrativeSummary(data, meta) {
-    const total = data.frames.length;
-    const start = data.frames[0];
-    const end = data.frames[total - 1];
-
+  // ─── Narrative ───────────────────────────────────────────────────────────
+  function buildNarrative(data, meta) {
+    const f0 = data.frames[0];
+    const fN = data.frames[data.frames.length - 1];
     if (meta.shape === 'event') {
-      // Sudden Event analysis
-      let maxFrame = data.frames[0];
-      data.frames.forEach(f => {
-        if (f.value > maxFrame.value) maxFrame = f;
-      });
-      storySummaryText.innerHTML = `
-        <strong>Sudden Anomaly:</strong> Beginning on <em>${start.date}</em> at a moderate <strong>${start.value.toFixed(1)}${data.units}</strong>, 
-        atmospheric conditions built up until a severe anomaly struck in late June 2021. 
-        Temperatures crossed the danger threshold of <strong>${data.threshold}${data.units}</strong>, reaching a historic peak of 
-        <strong style="color:var(--accent-red)">${maxFrame.value.toFixed(1)}${data.units}</strong> on <em>${maxFrame.date}</em> before gradually abating.
-      `;
+      const peak = data.frames.reduce((a,b) => b.value > a.value ? b : a, data.frames[0]);
+      narrativeText.innerHTML =
+        `Starting <strong>${f0.date}</strong> at a calm <strong>${f0.value.toFixed(1)} ${data.units}</strong>, 
+        conditions rapidly destabilized. The <strong>${data.threshold} ${data.units}</strong> threshold was 
+        breached — triggering a layered alarm — before reaching a catastrophic peak of 
+        <strong style="color:var(--red)">${peak.value.toFixed(1)} ${data.units}</strong> on <strong>${peak.date}</strong>, 
+        then gradually recovering through ${fN.date}.`;
     } else if (meta.shape === 'trend') {
-      // Long Trend analysis
-      storySummaryText.innerHTML = `
-        <strong>Decadal Drift:</strong> Continuous observation over <strong>${total} months</strong> from <em>${start.date.substring(0, 7)}</em> 
-        to <em>${end.date.substring(0, 7)}</em>. Overall temperatures fluctuate seasonally between <strong>${data.min.toFixed(1)}${data.units}</strong> 
-        and <strong>${data.max.toFixed(1)}${data.units}</strong>, with a persistent upward baseline climb across decades that you can hear in the rising note registers.
-      `;
+      narrativeText.innerHTML =
+        `A continuous record spanning <strong>${data.frames.length} observations</strong> from 
+        <strong>${f0.date.substring(0,7)}</strong> to <strong>${fN.date.substring(0,7)}</strong>. 
+        The fundamental pitch arc slowly drifts from low to high as the decadal baseline climbs — 
+        from <strong>${data.min.toFixed(1)}</strong> to <strong>${data.max.toFixed(1)} ${data.units}</strong>.`;
     } else {
-      // Seasonal cycle analysis
-      storySummaryText.innerHTML = `
-        <strong>Seasonal Harmonic:</strong> Spanning <em>${start.date}</em> to <em>${end.date}</em>, this region exhibits 
-        Earth's orbital rhythm with high temperatures around <strong>${data.max.toFixed(1)}${data.units}</strong> in July/August 
-        and winter troughs dipping to <strong>${data.min.toFixed(1)}${data.units}</strong> in January, producing a repeating melodic wave.
-      `;
+      narrativeText.innerHTML =
+        `A harmonic seasonal cycle across <strong>${data.frames.length} months</strong>. 
+        Pitch peaks each July/August at <strong>${data.max.toFixed(1)} ${data.units}</strong> 
+        and returns to its winter floor of <strong>${data.min.toFixed(1)} ${data.units}</strong> 
+        every January — a repeating melody written by Earth's orbital geometry.`;
     }
   }
 
-  /**
-   * Sets up or updates the Leaflet map with NASA GIBS Tile Layer and Area Bounding Box.
-   */
-  function initOrUpdateMap(data, meta) {
-    const bbox = data.area && data.area.bbox ? data.area.bbox : [-125, 45, -115, 52];
-    const southWest = L.latLng(bbox[1], bbox[0]);
-    const northEast = L.latLng(bbox[3], bbox[2]);
-    const bounds = L.latLngBounds(southWest, northEast);
+  // ─── Map ─────────────────────────────────────────────────────────────────
+  function initMap(data, meta) {
+    const bbox   = data.area && data.area.bbox ? data.area.bbox : [-130, 44, -114, 54];
+    const sw     = L.latLng(bbox[1], bbox[0]);
+    const ne     = L.latLng(bbox[3], bbox[2]);
+    const bounds = L.latLngBounds(sw, ne);
     const center = bounds.getCenter();
 
     if (!leafletMap) {
       leafletMap = L.map('map', {
-        zoomControl: true,
-        attributionControl: true,
-        scrollWheelZoom: false
+        scrollWheelZoom: false, zoomControl: true, attributionControl: true
       }).setView(center, meta.default_zoom || 6);
-
-      // Attribution
-      leafletMap.attributionControl.setPrefix(
-        '<a href="https://earthdata.nasa.gov/eosdis/science-system-description/eosdis-components/gibs" target="_blank">NASA GIBS</a>'
-      );
+      leafletMap.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
     } else {
       leafletMap.setView(center, meta.default_zoom || 6);
-      if (bboxOverlay) {
-        leafletMap.removeLayer(bboxOverlay);
-      }
+      if (bboxRect) leafletMap.removeLayer(bboxRect);
     }
 
-    // Add highlighted bounding box rectangle
-    const strokeColor = meta.accent_color || '#38bdf8';
-    bboxOverlay = L.rectangle(bounds, {
-      color: strokeColor,
-      weight: 3,
-      fillColor: strokeColor,
-      fillOpacity: 0.15
+    const color = meta.accent_color || '#00d4ff';
+    bboxRect = L.rectangle(bounds, {
+      color, weight: 2.5, fillColor: color, fillOpacity: 0.1, dashArray: '5,4'
     }).addTo(leafletMap);
+    leafletMap.fitBounds(bounds, { padding: [20, 20] });
 
-    leafletMap.fitBounds(bounds, { padding: [25, 25] });
-
-    // Update GIBS Tile Layer for first date
     lastTileDate = null;
-    updateGibsTileDate(data.frames[0].date, meta.gibs_layer);
+    updateGIBSTile(data.frames[0].date, meta.gibs_layer);
   }
 
-  /**
-   * Updates NASA GIBS Tile Layer to match the current frame's date.
-   */
-  function updateGibsTileDate(dateStr, layerName) {
-    if (!leafletMap) return;
-    if (lastTileDate === dateStr) return; // Prevent unnecessary tile reloads
-    lastTileDate = dateStr;
-
-    if (gibsTileLayer) {
-      leafletMap.removeLayer(gibsTileLayer);
-    }
-
-    const layer = layerName || 'MODIS_Terra_CorrectedReflectance_TrueColor';
-    const tileUrl = `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${layer}/default/${dateStr}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`;
-
-    gibsTileLayer = L.tileLayer(tileUrl, {
-      maxZoom: 9,
-      minZoom: 1,
-      tileSize: 256,
-      attribution: 'NASA Earth Science Data / GIBS'
-    }).addTo(leafletMap);
-
-    // Keep bbox overlay on top of satellite imagery
-    if (bboxOverlay) {
-      bboxOverlay.bringToFront();
-    }
+  function updateGIBSTile(date, layer) {
+    if (!leafletMap || lastTileDate === date) return;
+    lastTileDate = date;
+    if (gibsLayer) leafletMap.removeLayer(gibsLayer);
+    const lyr = layer || 'MODIS_Terra_CorrectedReflectance_TrueColor';
+    gibsLayer = L.tileLayer(
+      `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${lyr}/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`,
+      { maxZoom: 9, minZoom: 1, tileSize: 256, attribution: 'Imagery: NASA GIBS/ESDIS' }
+    ).addTo(leafletMap);
+    if (bboxRect) bboxRect.bringToFront();
   }
 
-  /**
-   * Synchronizes UI elements with the current data frame.
-   */
-  function updateFrameUI(index, frame) {
-    if (!currentStoryData) return;
-    const total = currentStoryData.frames.length;
+  // ─── Frame UI Update ─────────────────────────────────────────────────────
+  function updateFrameUI(idx, frame) {
+    if (!curData) return;
+    const total = curData.frames.length;
+    const t = (frame.value - curData.min) / ((curData.max - curData.min) || 1);
+    const isHot = curData.threshold !== null && frame.value >= curData.threshold;
 
-    // Counter & Readouts
-    frameCounter.textContent = `Frame ${index + 1} of ${total}`;
-    visibleDate.textContent = frame.date;
-    visibleValue.textContent = `${frame.value.toFixed(1)} ${currentStoryData.units}`;
-    chipDate.textContent = frame.date;
-    timelineScrubber.value = index;
+    // Telemetry strip
+    telFrame.textContent = `${idx+1}/${total}`;
+    telDate.textContent  = frame.date;
+    telValue.textContent = `${frame.value.toFixed(1)}${curData.units}`;
 
-    // Check if threshold crossing for alert styling
-    const isAlert = currentStoryData.threshold !== null && frame.value >= currentStoryData.threshold;
-    if (isAlert) {
-      visibleValue.style.color = 'var(--accent-red)';
-    } else {
-      visibleValue.style.color = 'var(--text-highlight)';
-    }
+    // Map date chip
+    chipDate.textContent = `📅 ${frame.date}`;
 
-    // Accessible Screen Reader Announcement (polite)
-    liveReadout.textContent = `Date: ${frame.date}. Value: ${frame.value.toFixed(1)} degrees Celsius.${isAlert ? ' Alert: threshold exceeded.' : ''}`;
+    // Player readouts
+    frameCounter.textContent = `${idx+1} / ${total}`;
+    visDate.textContent  = frame.date;
+    visValue.textContent = frame.value.toFixed(1);
+    visValue.className   = `metric-value${isHot ? ' hot' : ''}`;
 
-    // Update satellite map tile imagery
-    updateGibsTileDate(frame.date, currentStoryMeta.gibs_layer);
+    // Intensity bar
+    const pct = (t * 100).toFixed(1);
+    intensityFill.style.width   = `${pct}%`;
+    intensityPtr.style.left     = `${pct}%`;
+
+    // Scrubber
+    scrubber.value = idx;
+
+    // ARIA live announcement
+    liveReadout.textContent = `Date: ${frame.date}. Value: ${frame.value.toFixed(1)} ${curData.units}.${isHot ? ' WARNING: threshold exceeded.' : ''}`;
+
+    // Tile update
+    if (curMeta) updateGIBSTile(frame.date, curMeta.gibs_layer);
   }
 
-  /**
-   * Connects AudioEngine events to the UI.
-   */
-  function setupAudioEngineCallbacks() {
-    AudioEngine.onFrame = (index, frame) => {
-      updateFrameUI(index, frame);
-    };
+  // ─── Threshold Alert ─────────────────────────────────────────────────────
+  function triggerThresholdAlert(frame) {
+    // Flash overlay
+    threshFlash.classList.remove('active');
+    void threshFlash.offsetWidth; // force reflow
+    threshFlash.classList.add('active');
 
-    AudioEngine.onStateChange = (isPlaying) => {
-      btnPlayPause.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
-      if (isPlaying) {
-        playIcon.textContent = '⏸';
-        playText.textContent = 'Pause';
-        btnPlayPause.classList.add('playing');
-      } else {
-        playIcon.textContent = '▶';
-        playText.textContent = 'Play';
-        btnPlayPause.classList.remove('playing');
+    // Metric card border pulse
+    metricCard.classList.add('alert-active');
+
+    // Alert banner
+    alertBanner.hidden = false;
+    alertMessage.textContent =
+      `THRESHOLD CROSSED — ${frame.value.toFixed(1)} ${curData ? curData.units : ''} ≥ ${curData ? curData.threshold : ''} ${curData ? curData.units : ''}`;
+
+    // Status dot
+    statusDot.className = 'status-dot alert';
+    statusLabel.textContent = 'ALERT';
+    setTimeout(() => {
+      if (AudioEngine.isPlaying) { statusDot.className='status-dot playing'; statusLabel.textContent='PLAYING'; }
+    }, 3000);
+  }
+
+  // ─── Waveform Oscilloscope ────────────────────────────────────────────────
+  function startWaveformLoop() {
+    if (!waveCanvas || !waveCtx) return;
+    function draw() {
+      waveformRAF = requestAnimationFrame(draw);
+      const data = AudioEngine.getWaveformData ? AudioEngine.getWaveformData() : null;
+      const W = waveCanvas.width, H = waveCanvas.height;
+
+      waveCtx.clearRect(0, 0, W, H);
+      // Grid lines
+      waveCtx.strokeStyle = 'rgba(0,212,255,0.08)';
+      waveCtx.lineWidth = 1;
+      for (let i = 1; i < 4; i++) {
+        waveCtx.beginPath();
+        waveCtx.moveTo(0, H * i / 4);
+        waveCtx.lineTo(W, H * i / 4);
+        waveCtx.stroke();
       }
-    };
-  }
 
-  /**
-   * Wires all user controls and keyboard navigation.
-   */
-  function setupEventListeners() {
-    // Return to catalog
-    btnBackCatalog.addEventListener('click', () => {
-      AudioEngine.pause();
-      playerView.hidden = true;
-      landingView.hidden = false;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-
-    // Play / Pause
-    btnPlayPause.addEventListener('click', () => {
-      if (AudioEngine.isPlaying) {
-        AudioEngine.pause();
-      } else {
-        AudioEngine.play();
-      }
-    });
-
-    // Step Back
-    btnStepBack.addEventListener('click', () => {
-      AudioEngine.pause();
-      AudioEngine.seek(AudioEngine.currentIndex - 1);
-    });
-
-    // Step Forward
-    btnStepForward.addEventListener('click', () => {
-      AudioEngine.pause();
-      AudioEngine.seek(AudioEngine.currentIndex + 1);
-    });
-
-    // Scrubber Slider
-    timelineScrubber.addEventListener('input', (e) => {
-      const idx = parseInt(e.target.value, 10);
-      AudioEngine.seek(idx);
-    });
-
-    // Playback Speed
-    selectSpeed.addEventListener('change', (e) => {
-      AudioEngine.setRate(parseFloat(e.target.value));
-    });
-
-    // Volume Slider
-    sliderVolume.addEventListener('input', (e) => {
-      AudioEngine.setVolume(parseFloat(e.target.value));
-    });
-
-    // Sample Preview Buttons in Legend
-    sampleButtons.forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const sampleType = btn.getAttribute('data-sample');
-        AudioEngine.playSample(sampleType);
-      });
-    });
-
-    // Global Accessible Keyboard Shortcuts
-    document.addEventListener('keydown', (e) => {
-      // Ignore if user is inside an input or select
-      if (e.target.tagName === 'INPUT' && e.target.type !== 'range') return;
-      if (e.target.tagName === 'SELECT') return;
-
-      // Escape -> Back to catalog
-      if (e.key === 'Escape' && !playerView.hidden) {
-        e.preventDefault();
-        btnBackCatalog.click();
+      if (!data || !data.length) {
+        // Idle flat line
+        waveCtx.strokeStyle = 'rgba(0,212,255,0.25)';
+        waveCtx.lineWidth = 1.5;
+        waveCtx.beginPath();
+        waveCtx.moveTo(0, H/2);
+        waveCtx.lineTo(W, H/2);
+        waveCtx.stroke();
         return;
       }
 
-      // 1, 2, 3 -> Switch to Story 1, 2, or 3
-      if (['1', '2', '3'].includes(e.key)) {
-        const storyIdx = parseInt(e.key, 10) - 1;
-        if (stories[storyIdx]) {
-          e.preventDefault();
-          loadStory(stories[storyIdx]);
-          return;
-        }
-      }
+      // Active waveform
+      const isAlert = curData && curData.threshold !== null &&
+        curData.frames[AudioEngine.currentIndex] &&
+        curData.frames[AudioEngine.currentIndex].value >= curData.threshold;
 
-      // In Player View:
-      if (!playerView.hidden) {
-        // Space -> Play / Pause
-        if (e.key === ' ' || e.code === 'Space') {
-          e.preventDefault();
-          btnPlayPause.click();
-        }
-        // Left Arrow -> Step back
-        else if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          btnStepBack.click();
-        }
-        // Right Arrow -> Step forward
-        else if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          btnStepForward.click();
-        }
-        // Home -> First frame
-        else if (e.key === 'Home') {
-          e.preventDefault();
-          AudioEngine.seek(0);
-        }
-        // End -> Last frame
-        else if (e.key === 'End' && currentStoryData) {
-          e.preventDefault();
-          AudioEngine.seek(currentStoryData.frames.length - 1);
-        }
+      const lineColor = isAlert ? '#ff3c38' : '#00d4ff';
+      const glowColor = isAlert ? 'rgba(255,60,56,0.5)' : 'rgba(0,212,255,0.4)';
+
+      waveCtx.shadowBlur = 8;
+      waveCtx.shadowColor = glowColor;
+      waveCtx.strokeStyle = lineColor;
+      waveCtx.lineWidth = 2;
+      waveCtx.beginPath();
+
+      const sliceW = W / data.length;
+      let x = 0;
+      for (let i = 0; i < data.length; i++) {
+        const y = (data[i] * 0.9 + 1) / 2 * H;
+        if (i === 0) waveCtx.moveTo(x, y);
+        else waveCtx.lineTo(x, y);
+        x += sliceW;
       }
+      waveCtx.stroke();
+      waveCtx.shadowBlur = 0;
+    }
+    draw();
+  }
+
+  // ─── Audio Callbacks ─────────────────────────────────────────────────────
+  function wireAudioCallbacks() {
+    AudioEngine.onFrame = (idx, frame) => {
+      updateFrameUI(idx, frame);
+    };
+
+    AudioEngine.onStateChange = (playing) => {
+      btnPlay.setAttribute('aria-pressed', playing ? 'true' : 'false');
+      if (playing) {
+        playGlyph.textContent = '⏸';
+        playLabel.textContent = 'PAUSE';
+        statusDot.className   = 'status-dot playing';
+        statusLabel.textContent = 'PLAYING';
+      } else {
+        playGlyph.textContent = '▶';
+        playLabel.textContent = 'PLAY';
+        statusDot.className   = 'status-dot';
+        statusLabel.textContent = 'PAUSED';
+      }
+    };
+
+    AudioEngine.onThreshold = (frame) => {
+      triggerThresholdAlert(frame);
+    };
+  }
+
+  // ─── Control Wiring ───────────────────────────────────────────────────────
+  function wireControls() {
+    btnBack.addEventListener('click', () => {
+      AudioEngine.pause();
+      playerView.hidden  = true;
+      landingView.hidden = false;
+      telMission.textContent = 'STANDBY';
+      statusDot.className = 'status-dot';
+      statusLabel.textContent = 'IDLE';
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+
+    btnPlay.addEventListener('click', () => {
+      if (AudioEngine.isPlaying) AudioEngine.pause();
+      else AudioEngine.play();
+    });
+
+    btnStepBack.addEventListener('click', () => { AudioEngine.pause(); AudioEngine.seek(AudioEngine.currentIndex - 1); });
+    btnStepFwd.addEventListener('click',  () => { AudioEngine.pause(); AudioEngine.seek(AudioEngine.currentIndex + 1); });
+
+    scrubber.addEventListener('input', e => AudioEngine.seek(parseInt(e.target.value, 10)));
+    speedSelect.addEventListener('change', e => AudioEngine.setRate(parseFloat(e.target.value)));
+    volSlider.addEventListener('input', e => AudioEngine.setVolume(parseFloat(e.target.value)));
+
+    document.querySelectorAll('.btn-sample').forEach(btn => {
+      btn.addEventListener('click', () => AudioEngine.playSample(btn.dataset.sample));
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      if (['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName) && e.target.type !== 'range') return;
+
+      if (e.key === 'Escape' && !playerView.hidden) { e.preventDefault(); btnBack.click(); return; }
+      if (['1','2','3'].includes(e.key) && stories[+e.key-1]) {
+        e.preventDefault(); loadStory(stories[+e.key-1]); return;
+      }
+      if (playerView.hidden) return;
+
+      const map = {
+        ' ': () => btnPlay.click(),
+        'ArrowLeft':  () => { AudioEngine.pause(); AudioEngine.seek(AudioEngine.currentIndex - 1); },
+        'ArrowRight': () => { AudioEngine.pause(); AudioEngine.seek(AudioEngine.currentIndex + 1); },
+        'Home': () => AudioEngine.seek(0),
+        'End':  () => curData && AudioEngine.seek(curData.frames.length - 1)
+      };
+      if (map[e.key]) { e.preventDefault(); map[e.key](); }
     });
   }
 
-  // Run on page ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initApp);
-  } else {
-    initApp();
-  }
+  // ─── Go ───────────────────────────────────────────────────────────────────
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
 })();

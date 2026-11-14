@@ -85,3 +85,4 @@ In accordance with NASA Space Apps Challenge guidelines: AI coding assistants we
 ## Acknowledgments & Citations
 
 > *Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (ESDIS) with funding provided by NASA/HQ.*
+
