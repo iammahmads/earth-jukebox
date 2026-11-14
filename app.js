@@ -1212,12 +1212,16 @@ Earth Observation archives and is free for open educational and research use.
         voiceEngineBadge.classList.add('loading');
       }
 
+      // Absolute URLs required by speech-commands library scheme check (must start with http:// or https://)
+      const modelUrl = new URL('assets/models/speech-commands/model.json', window.location.href).href;
+      const metaUrl  = new URL('assets/models/speech-commands/metadata.json', window.location.href).href;
+
       // Load model from local offline assets
       localAiRecognizer = speechCommands.create(
         'BROWSER_FFT',
         null,
-        'assets/models/speech-commands/model.json',
-        'assets/models/speech-commands/metadata.json'
+        modelUrl,
+        metaUrl
       );
 
       await localAiRecognizer.ensureModelLoaded();
