@@ -1259,6 +1259,9 @@ Earth Observation archives and is free for open educational and research use.
 
       await localAiRecognizer.listen(result => {
         const scores = result.scores;
+        const idxUnknown = words.indexOf('_unknown_');
+        const unknownScore = idxUnknown >= 0 ? scores[idxUnknown] : 0;
+
         let maxScore = -1;
         let maxIdx = -1;
         for (let i = 0; i < scores.length; i++) {
@@ -1269,14 +1272,28 @@ Earth Observation archives and is free for open educational and research use.
         }
         const detectedWord = words[maxIdx];
 
-        // Filter background noise and unknown sounds
-        if (maxScore >= 0.70 && detectedWord !== '_background_noise_' && detectedWord !== '_unknown_') {
+        // Strict criteria to prevent false positives (e.g. "pause" mistakenly triggering "three"):
+        // 1. Must reach high confidence (>= 0.82)
+        // 2. Must beat _unknown_ by at least 0.20
+        // 3. Must not be background noise or unknown
+        const isConfident = (maxScore >= 0.82) && (maxScore - unknownScore >= 0.20);
+
+        if (isConfident && detectedWord !== '_background_noise_' && detectedWord !== '_unknown_') {
           handleLocalAiWord(detectedWord, maxScore);
+        } else if (detectedWord === '_unknown_' || (maxScore > 0.50 && !isConfident)) {
+          // Provide instant polite feedback if an out-of-vocabulary word (like "pause") was spoken
+          if (transcriptPlaceholder) {
+            transcriptPlaceholder.style.display = 'inline';
+            transcriptPlaceholder.innerHTML = '⚠️ Unrecognized word. To pause, speak: <strong>"STOP"</strong> (or click 🗣️ "Pause")';
+          }
+          if (voiceStationText) {
+            voiceStationText.textContent = '⚠️ Unrecognized word. Say "STOP" (to pause), "GO" (to play), "THREE" (Story 3)';
+          }
         }
       }, {
         includeSpectrogram: false,
-        probabilityThreshold: 0.70,
-        overlapFactor: 0.45
+        probabilityThreshold: 0.80,
+        overlapFactor: 0.40
       });
       console.log('Local AI Speech Commands listening actively.');
     } catch (err) {
