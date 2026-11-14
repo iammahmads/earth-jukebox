@@ -69,8 +69,14 @@
   const btnSynapticsToggle= $('btn-synaptics-toggle');
   const synapticsBtnLabel = $('synaptics-btn-label');
   const btnVoiceGuide     = $('btn-voice-guide');
-  const voiceHud          = $('voice-hud');
-  const voiceHudText      = $('voice-hud-text');
+  const voiceStation      = $('voice-station');
+  const voiceStationText  = $('voice-station-text');
+  const voiceStationIcon  = $('voice-station-icon');
+  const voiceStationTitle = $('voice-station-title');
+  const btnCloseVoiceStation = $('btn-close-voice-station');
+  const voiceInputForm    = $('voice-input-form');
+  const voiceTextInput    = $('voice-text-input');
+  const tabModeVoice      = $('tab-mode-voice');
 
   // Telemetry Strip
   const telDot    = $('tel-dot');
@@ -275,11 +281,15 @@
     });
   }
 
-  // ─── Workstation Tabs (Explorer, Comparator, Scanner, Accessibility) ─────
+  // ─── Workstation Tabs (Explorer, Comparator, Scanner, Accessibility, Voice) ─────
   function wireWorkstationTabs() {
     wsTabs.forEach(tab => {
       tab.addEventListener('click', () => {
         const mode = tab.dataset.mode;
+        if (mode === 'voice') {
+          openVoiceStation(true);
+          return;
+        }
         setWorkstationMode(mode);
       });
     });
@@ -982,25 +992,98 @@ Earth Observation archives and is free for open educational and research use.
     } catch (_) {}
   }
 
-  function showVoiceToast(text, isAlert = false) {
-    if (!voiceHud) return;
+  function updateVoiceStationStatus(text, statusType = 'info') {
+    if (!voiceStation) return;
     clearTimeout(voiceToastTimer);
-    voiceHud.hidden = false;
-    voiceHud.classList.toggle('alert', isAlert);
-    voiceHudText.textContent = text;
+    voiceStation.hidden = false;
+
+    if (voiceStationText) voiceStationText.textContent = text;
+
+    if (statusType === 'live') {
+      if (voiceStationIcon) voiceStationIcon.textContent = '🔴';
+      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
+      if (voiceStationText) voiceStationText.style.color = 'var(--cyan)';
+    } else if (statusType === 'success') {
+      if (voiceStationIcon) voiceStationIcon.textContent = '✅';
+      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--green)';
+      if (voiceStationText) voiceStationText.style.color = 'var(--green)';
+    } else if (statusType === 'alert') {
+      if (voiceStationIcon) voiceStationIcon.textContent = '⚠️';
+      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--yellow)';
+      if (voiceStationText) voiceStationText.style.color = 'var(--yellow)';
+    } else {
+      if (voiceStationIcon) voiceStationIcon.textContent = '🎤';
+      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
+      if (voiceStationText) voiceStationText.style.color = 'var(--muted2)';
+    }
+
     voiceToastTimer = setTimeout(() => {
-      if (!isListening) {
-        voiceHud.hidden = true;
+      if (!voiceStation || voiceStation.hidden) return;
+      if (isListening) {
+        if (voiceStationIcon) voiceStationIcon.textContent = '🔴';
+        if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
+        if (voiceStationText) {
+          voiceStationText.textContent = '🔴 Microphone live: Listening for speech (or click any chip below)...';
+          voiceStationText.style.color = 'var(--muted2)';
+        }
       } else {
-        voiceHudText.textContent = 'Listening for voice command...';
-        voiceHud.classList.remove('alert');
+        if (voiceStationIcon) voiceStationIcon.textContent = '🎤';
+        if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
+        if (voiceStationText) {
+          voiceStationText.textContent = 'Ready. Speak any command into your microphone or click any voice command below...';
+          voiceStationText.style.color = 'var(--muted2)';
+        }
       }
-    }, 3500);
+    }, 4000);
+  }
+
+  function showVoiceToast(text, isAlert = false) {
+    updateVoiceStationStatus(text, isAlert ? 'alert' : 'info');
+  }
+
+  function openVoiceStation(forceOpen = false) {
+    if (!voiceStation) return;
+    if (forceOpen || voiceStation.hidden) {
+      voiceStation.hidden = false;
+      if (btnVoiceToggle) {
+        btnVoiceToggle.classList.add('active');
+        btnVoiceToggle.setAttribute('aria-pressed', 'true');
+      }
+      if (voiceBtnLabel) voiceBtnLabel.textContent = isListening ? 'Voice Control: ACTIVE' : 'Voice: ACTIVE';
+
+      if (speechRecognition && !isListening) {
+        try {
+          speechRecognition.start();
+        } catch (_) {}
+      } else if (!speechRecognition) {
+        updateVoiceStationStatus('ℹ️ Live Mic requires Chrome/Edge over HTTP. Voice Commander is active! Click any command chip below or type a command:', 'alert');
+      }
+      if (voiceTextInput) {
+        setTimeout(() => voiceTextInput.focus(), 100);
+      }
+    } else {
+      closeVoiceStation();
+    }
+  }
+
+  function closeVoiceStation() {
+    if (!voiceStation) return;
+    voiceStation.hidden = true;
+    if (isListening && speechRecognition) {
+      isListening = false;
+      try { speechRecognition.stop(); } catch (_) {}
+    }
+    if (btnVoiceToggle) {
+      btnVoiceToggle.classList.remove('active', 'listening');
+      btnVoiceToggle.setAttribute('aria-pressed', 'false');
+    }
+    if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice Control: OFF';
+    if (micIcon) micIcon.textContent = '🎤';
   }
 
   function executeVoiceCommand(rawTranscript) {
     const text = rawTranscript.toLowerCase().trim();
-    showVoiceToast(`Heard: "${text}"`);
+    updateVoiceStationStatus(`🗣️ Executing: "${text}"`, 'success');
     triggerHaptic(20);
 
     // 1. Play / Start
@@ -1115,20 +1198,21 @@ Earth Observation archives and is free for open educational and research use.
       return;
     }
 
-    showVoiceToast(`Command not recognized: "${text}". Say "Help" for list.`, true);
+    // 11. Help / Guide
+    if (text.includes('help') || text.includes('guide') || text.includes('command')) {
+      if (voiceModal) voiceModal.showModal();
+      return;
+    }
+
+    updateVoiceStationStatus(`Command not recognized: "${text}". Try "Play", "Story 3", "Faster", "Scan" or click any chip.`, 'alert');
   }
 
   function wireVoiceAndSynaptics() {
     // 🎤 Web Speech API Voice Controller Setup
     const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-    if (btnVoiceToggle) {
-      if (!SpeechRec) {
-        btnVoiceToggle.title = 'Speech Recognition is supported in Chrome, Edge, and Safari.';
-        btnVoiceToggle.addEventListener('click', () => {
-          showVoiceToast('Speech Recognition requires Chrome, Edge, or Safari browser.', true);
-        });
-      } else {
+    if (SpeechRec) {
+      try {
         speechRecognition = new SpeechRec();
         speechRecognition.continuous = true;
         speechRecognition.interimResults = false;
@@ -1136,11 +1220,13 @@ Earth Observation archives and is free for open educational and research use.
 
         speechRecognition.onstart = () => {
           isListening = true;
-          btnVoiceToggle.classList.add('listening');
-          voiceBtnLabel.textContent = 'Voice Control: ACTIVE';
-          micIcon.textContent = '🔴';
-          voiceHud.hidden = false;
-          voiceHudText.textContent = 'Listening... Say "Play", "Pause", "Story 1-5", "Faster"';
+          if (btnVoiceToggle) {
+            btnVoiceToggle.classList.add('listening', 'active');
+            btnVoiceToggle.setAttribute('aria-pressed', 'true');
+          }
+          if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice Control: ACTIVE';
+          if (micIcon) micIcon.textContent = '🔴';
+          updateVoiceStationStatus('🔴 Microphone live: Listening for voice commands (or click any chip below)...', 'live');
         };
 
         speechRecognition.onresult = (e) => {
@@ -1150,13 +1236,21 @@ Earth Observation archives and is free for open educational and research use.
         };
 
         speechRecognition.onerror = (e) => {
-          console.warn('Speech recognition error:', e.error);
-          if (e.error === 'not-allowed') {
-            showVoiceToast('Microphone access denied. Enable mic in browser settings.', true);
+          console.warn('Speech recognition status:', e.error);
+          if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
             isListening = false;
-            btnVoiceToggle.classList.remove('listening');
-            voiceBtnLabel.textContent = 'Voice Control: OFF';
-            micIcon.textContent = '🎤';
+            if (btnVoiceToggle) {
+              btnVoiceToggle.classList.remove('listening');
+              btnVoiceToggle.classList.add('active');
+              btnVoiceToggle.setAttribute('aria-pressed', 'true');
+            }
+            if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: ACTIVE';
+            if (micIcon) micIcon.textContent = '🎤';
+            updateVoiceStationStatus('ℹ️ Microphone blocked or requires HTTP. Voice Station is ready! Click any command chip below or type a command:', 'alert');
+          } else if (e.error === 'no-speech') {
+            if (isListening) {
+              updateVoiceStationStatus('🔴 Microphone live: Speak any command into mic or click chips below...', 'live');
+            }
           }
         };
 
@@ -1164,24 +1258,51 @@ Earth Observation archives and is free for open educational and research use.
           if (isListening) {
             try { speechRecognition.start(); } catch (_) {}
           } else {
-            btnVoiceToggle.classList.remove('listening');
-            voiceBtnLabel.textContent = 'Voice Control: OFF';
-            micIcon.textContent = '🎤';
-            voiceHud.hidden = true;
+            if (btnVoiceToggle && voiceStation && voiceStation.hidden) {
+              btnVoiceToggle.classList.remove('listening', 'active');
+              btnVoiceToggle.setAttribute('aria-pressed', 'false');
+              voiceBtnLabel.textContent = 'Voice Control: OFF';
+              micIcon.textContent = '🎤';
+            }
           }
         };
-
-        btnVoiceToggle.addEventListener('click', () => {
-          if (!isListening) {
-            try {
-              speechRecognition.start();
-            } catch (_) {}
-          } else {
-            isListening = false;
-            try { speechRecognition.stop(); } catch (_) {}
-          }
-        });
+      } catch (err) {
+        console.warn('Could not instantiate SpeechRecognition:', err);
       }
+    }
+
+    // Toggle button in header
+    if (btnVoiceToggle) {
+      btnVoiceToggle.addEventListener('click', () => {
+        openVoiceStation();
+      });
+    }
+
+    // Close button on Voice Station Drawer
+    if (btnCloseVoiceStation) {
+      btnCloseVoiceStation.addEventListener('click', () => {
+        closeVoiceStation();
+      });
+    }
+
+    // Quick Voice Command Chips
+    document.querySelectorAll('.voice-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const cmd = chip.dataset.cmd;
+        if (cmd) executeVoiceCommand(cmd);
+      });
+    });
+
+    // Voice Text Input Fallback
+    if (voiceInputForm && voiceTextInput) {
+      voiceInputForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const cmd = voiceTextInput.value.trim();
+        if (cmd) {
+          executeVoiceCommand(cmd);
+          voiceTextInput.value = '';
+        }
+      });
     }
 
     // 🎛️ Synaptics Haptics Toggle

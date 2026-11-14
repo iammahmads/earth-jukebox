@@ -64,12 +64,44 @@
     </div>
   </nav>
 
-  <!-- ═══ LIVE VOICE COMMAND HUD TOAST ═══ -->
-  <div id="voice-hud" class="voice-hud" hidden aria-live="assertive">
-    <span class="voice-pulse-ring"></span>
-    <span id="voice-hud-icon">🎤</span>
-    <span class="voice-hud-title">VOICE CONTROL:</span>
-    <span id="voice-hud-text">Listening for command (e.g. "Play", "Story 3", "Faster")...</span>
+  <!-- ═══ LIVE VOICE COMMAND HUD & INTERACTIVE WORKSTATION BAR ═══ -->
+  <div id="voice-station" class="voice-station" hidden aria-live="assertive">
+    <div class="voice-station-inner">
+      <div class="voice-station-status-row">
+        <div class="voice-status-group">
+          <span class="voice-pulse-ring" id="voice-pulse-ring"></span>
+          <span id="voice-station-icon">🎤</span>
+          <strong id="voice-station-title">VOICE COMMAND STATION:</strong>
+          <span id="voice-station-text">Ready. Speak any command into your microphone or click any voice command below...</span>
+        </div>
+        <button id="btn-close-voice-station" class="btn-voice-station-close" aria-label="Close voice station">✕ Minimize</button>
+      </div>
+
+      <!-- Quick-Action Voice Command Chips -->
+      <div class="voice-chips-row" role="group" aria-label="Quick voice command chips">
+        <span class="voice-chips-label">One-Click Voice Commands:</span>
+        <button class="voice-chip" data-cmd="play">🗣️ "Play"</button>
+        <button class="voice-chip" data-cmd="pause">🗣️ "Pause"</button>
+        <button class="voice-chip" data-cmd="next">🗣️ "Next Frame"</button>
+        <button class="voice-chip" data-cmd="story 1">🗣️ "Story 1 (Seasons)"</button>
+        <button class="voice-chip" data-cmd="story 2">🗣️ "Story 2 (Trend)"</button>
+        <button class="voice-chip" data-cmd="story 3">🗣️ "Story 3 (Heat Dome ⭐)"</button>
+        <button class="voice-chip" data-cmd="story 4">🗣️ "Story 4 (Amazon)"</button>
+        <button class="voice-chip" data-cmd="story 5">🗣️ "Story 5 (Australia)"</button>
+        <button class="voice-chip" data-cmd="faster">🗣️ "Faster"</button>
+        <button class="voice-chip" data-cmd="louder">🗣️ "Louder"</button>
+        <button class="voice-chip" data-cmd="scan">🗣️ "Run Scan"</button>
+        <button class="voice-chip" data-cmd="compare">🗣️ "Compare"</button>
+        <button class="voice-chip" data-cmd="report">🗣️ "Export Report"</button>
+      </div>
+
+      <!-- Voice Command Text Input for typing commands -->
+      <form id="voice-input-form" class="voice-input-form" onsubmit="return false;">
+        <label for="voice-text-input" class="sr-only">Type a voice command</label>
+        <input type="text" id="voice-text-input" class="voice-text-input" placeholder="Type or speak a voice command (e.g. 'play heat dome', 'faster', 'louder') and press Enter...">
+        <button type="submit" id="btn-voice-input-submit" class="btn-voice-input-submit">🗣️ Execute Command</button>
+      </form>
+    </div>
   </div>
 
   <!-- ═══ MAIN ═══ -->
@@ -191,6 +223,9 @@
           </button>
           <button class="ws-tab" id="tab-mode-accessibility" role="tab" aria-selected="false" data-mode="accessibility">
             ♿ Accessible Earth Lab
+          </button>
+          <button class="ws-tab ws-tab-voice" id="tab-mode-voice" role="tab" aria-selected="false" data-mode="voice">
+            🎤 Voice Commander
           </button>
         </div>
 
