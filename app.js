@@ -255,6 +255,14 @@
     'story-5-australia':'Wildfire Lead Synth'
   };
 
+  const STORY_SVGS = {
+    'story-1-seasonal': '<svg class="icon" viewBox="0 0 24 24"><path d="M7 20h10"/><path d="M10 20c0-7 3-9 8-9-1 4-3 7-8 9Z"/><path d="M6 13c3 0 5-2 5-5-3 0-5 2-5 5Z"/></svg>',
+    'story-2-trend':    '<svg class="icon" viewBox="0 0 24 24"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+    'story-3-event':    '<svg class="icon" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>',
+    'story-4-amazon':   '<svg class="icon" viewBox="0 0 24 24"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>',
+    'story-5-australia':'<svg class="icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+  };
+
   function renderCatalog() {
     storiesGrid.innerHTML = '';
     const voiceWords = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
@@ -264,15 +272,14 @@
       card.tabIndex = 0;
       card.setAttribute('role', 'listitem');
       card.setAttribute('aria-label', `Story ${i+1}: ${s.title}`);
-      card.style.setProperty('--accent', s.accent_color || 'var(--cyan)');
 
       card.innerHTML = `
         <div>
-          <div class="sc-row1">
-            <span class="sc-icon" aria-hidden="true">${s.icon}</span>
-            <div style="text-align:right">
-              <div class="sc-num">STORY ${i+1} · ${s.years || ''}</div>
-              <span class="sc-badge" style="color:${s.accent_color};border-color:${s.accent_color}">${s.badge}</span>
+          <div class="sc-header">
+            <div class="sc-icon-box" aria-hidden="true">${STORY_SVGS[s.id] || ''}</div>
+            <div class="sc-meta">
+              <span class="sc-num">SERIES ${i+1} · ${s.years || ''}</span>
+              <span class="sc-badge">${(s.badge || '').replace('⭐ ', '')}</span>
             </div>
           </div>
           <h2 class="sc-title">${s.title}</h2>
@@ -280,8 +287,8 @@
           <p class="sc-desc">${s.description}</p>
         </div>
         <div class="sc-footer">
-          <span class="sc-synth">🎵 ${SYNTH_NAMES[s.id] || 'Synthesis'}</span>
-          <span class="sc-cta">LAUNCH <small class="voice-badge-tag">[Say "${voiceWords[i]}"]</small> →</span>
+          <span class="sc-synth">${SYNTH_NAMES[s.id] || 'Synthesis'}</span>
+          <span class="sc-cta">LAUNCH <span class="voice-badge-tag">[Say "${voiceWords[i]}"]</span> →</span>
         </div>`;
 
       const open = () => loadStory(s);
@@ -343,7 +350,7 @@
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', s.id === activeId ? 'true' : 'false');
       btn.setAttribute('aria-label', `Switch to story: ${s.title}`);
-      btn.innerHTML = `${s.icon} ${i+1}. ${s.title.split(':')[0]} <span class="tab-voice-badge">[Say "${voiceWords[i]}"]</span>`;
+      btn.innerHTML = `${STORY_SVGS[s.id] || ''} <span>${i+1}. ${s.title.split(':')[0]}</span> <span class="tab-voice-badge">[${voiceWords[i]}]</span>`;
       btn.addEventListener('click', () => loadStory(s));
       storyTabs.appendChild(btn);
     });
@@ -402,7 +409,7 @@
     legMin.textContent = `${data.min.toFixed(1)} ${data.units}`;
     legMax.textContent = `${data.max.toFixed(1)} ${data.units}`;
     if (data.threshold !== null && data.threshold !== undefined) {
-      legThresh.textContent = `🚨 Alert at: ${data.threshold} ${data.units}${data.threshold_date?' / '+data.threshold_date:''}`;
+      legThresh.textContent = `Alert Threshold: ${data.threshold} ${data.units}${data.threshold_date?' / '+data.threshold_date:''}`;
     } else { legThresh.textContent = 'No threshold alert for this story'; }
 
     // Map chips
@@ -612,7 +619,7 @@
     telFrame.textContent = `${idx+1}/${total}`;
 
     // Map date chip
-    chipDate.textContent = `📅 ${frame.date}`;
+    chipDate.textContent = frame.date;
 
     // Metric panel
     mpFrame.textContent = `${idx+1} / ${total}`;
@@ -803,7 +810,7 @@
         <td>${devSign}${anom.deviation.toFixed(2)} ${curData.units}</td>
         <td style="color:var(--amber)">${anom.zScore.toFixed(2)}σ</td>
         <td>
-          <button class="btn-table-audition" data-idx="${anom.index}">🎧 Audition</button>
+          <button class="btn-table-audition" data-idx="${anom.index}">Audition</button>
         </td>
       `;
       tr.querySelector('.btn-table-audition').addEventListener('click', () => {
@@ -882,7 +889,7 @@
     const deltaText = delta > 0 ? `rising by ${delta.toFixed(2)} ${curData.units}` : (delta < 0 ? `falling by ${Math.abs(delta).toFixed(2)} ${curData.units}` : 'stable');
     const isAlert   = curData.threshold !== null && curF.value >= curData.threshold;
 
-    bviSpeechText.innerHTML = `Observation for <strong>${curF.date}</strong>: Value is <strong>${curF.value.toFixed(1)} ${curData.units}</strong> (${deltaText}). ${isAlert ? '<span style="color:var(--red)">⚠ ALERT: Critical threshold of ' + curData.threshold + curData.units + ' is exceeded!</span>' : 'Within normal operational envelope.'}`;
+    bviSpeechText.innerHTML = `Observation for <strong>${curF.date}</strong>: Value is <strong>${curF.value.toFixed(1)} ${curData.units}</strong> (${deltaText}). ${isAlert ? '<span style="color:var(--red)">ALERT: Critical threshold of ' + curData.threshold + curData.units + ' is exceeded!</span>' : 'Within normal operational envelope.'}`;
     bviSlopeMetric.textContent = `Rate of Change: ${delta >= 0 ? '+' : ''}${delta.toFixed(2)} ${curData.units}/step`;
     bviPitchMetric.textContent = `Acoustic Note: ${note} (MIDI ${midi})`;
   }
@@ -898,9 +905,9 @@
 
       btnCopyReport.addEventListener('click', () => {
         navigator.clipboard.writeText(reportContent.textContent);
-        btnCopyReport.textContent = '✅ Copied!';
+        btnCopyReport.textContent = 'Copied to Clipboard';
         triggerHaptic(20);
-        setTimeout(() => { btnCopyReport.textContent = '📋 Copy to Clipboard'; }, 2000);
+        setTimeout(() => { btnCopyReport.textContent = 'Copy to Clipboard'; }, 2000);
       });
 
       btnDownloadRep.addEventListener('click', () => {
@@ -1002,6 +1009,11 @@ Earth Observation archives and is free for open educational and research use.
       }
     } catch (_) {}
   }
+
+  // ─── SVG Glyphs for Status & Controls ───────────────────────────────────
+  const SVG_MIC = '<svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>';
+  const SVG_CHECK = '<svg class="icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>';
+  const SVG_ALERT = '<svg class="icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
 
   // ─── MICROPHONE HARDWARE TELEMETRY & VU METER ────────────────────────────
   let micStream       = null;
@@ -1118,12 +1130,12 @@ Earth Observation archives and is free for open educational and research use.
     try {
       await startMicVisualizer();
       if (!micStream) {
-        updateVoiceStationStatus('⚠️ Microphone access was not granted. Please allow microphone access in browser address bar.', 'alert');
+        updateVoiceStationStatus('Microphone access was not granted. Please allow microphone access in browser address bar.', 'alert');
         return;
       }
       const audioTrack = micStream.getAudioTracks()[0];
       const micName = audioTrack ? (audioTrack.label || 'Default Microphone') : 'Microphone';
-      updateVoiceStationStatus(`🎙️ Testing "${micName}" — Speak into your mic right now!`, 'live');
+      updateVoiceStationStatus(`Testing "${micName}" — Speak into your mic right now!`, 'live');
 
       let maxPeak = 0;
       const testInterval = setInterval(() => {
@@ -1139,13 +1151,13 @@ Earth Observation archives and is free for open educational and research use.
         clearInterval(testInterval);
         const peakPct = Math.round((maxPeak / 255) * 100);
         if (peakPct > 8) {
-          updateVoiceStationStatus(`✅ Microphone is receiving audio loud & clear! Peak signal: ${peakPct}%. Device: "${micName}"`, 'success');
+          updateVoiceStationStatus(`Microphone is receiving audio loud & clear! Peak signal: ${peakPct}%. Device: "${micName}"`, 'success');
         } else {
-          updateVoiceStationStatus(`⚠️ Signal was 0%. Your microphone may be hardware muted or muted in OS sound settings. Device: "${micName}"`, 'alert');
+          updateVoiceStationStatus(`Signal level 0%. Microphone may be muted in OS settings. Device: "${micName}"`, 'alert');
         }
       }, 3000);
     } catch (err) {
-      updateVoiceStationStatus(`⚠️ Mic test error: ${err.message}. Check browser mic permissions.`, 'alert');
+      updateVoiceStationStatus(`Mic test error: ${err.message}. Check browser mic permissions.`, 'alert');
     }
   }
 
@@ -1157,38 +1169,38 @@ Earth Observation archives and is free for open educational and research use.
     if (voiceStationText) voiceStationText.textContent = text;
 
     if (statusType === 'live') {
-      if (voiceStationIcon) voiceStationIcon.textContent = '🔴';
-      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
-      if (voiceStationText) voiceStationText.style.color = 'var(--cyan)';
+      if (voiceStationIcon) voiceStationIcon.innerHTML = SVG_MIC;
+      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--accent)';
+      if (voiceStationText) voiceStationText.style.color = 'var(--accent)';
     } else if (statusType === 'success') {
-      if (voiceStationIcon) voiceStationIcon.textContent = '✅';
+      if (voiceStationIcon) voiceStationIcon.innerHTML = SVG_CHECK;
       if (voiceStationTitle) voiceStationTitle.style.color = 'var(--green)';
       if (voiceStationText) voiceStationText.style.color = 'var(--green)';
     } else if (statusType === 'alert') {
-      if (voiceStationIcon) voiceStationIcon.textContent = '⚠️';
-      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--yellow)';
-      if (voiceStationText) voiceStationText.style.color = 'var(--yellow)';
+      if (voiceStationIcon) voiceStationIcon.innerHTML = SVG_ALERT;
+      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--amber)';
+      if (voiceStationText) voiceStationText.style.color = 'var(--amber)';
     } else {
-      if (voiceStationIcon) voiceStationIcon.textContent = '🎤';
-      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
-      if (voiceStationText) voiceStationText.style.color = 'var(--muted2)';
+      if (voiceStationIcon) voiceStationIcon.innerHTML = SVG_MIC;
+      if (voiceStationTitle) voiceStationTitle.style.color = 'var(--accent)';
+      if (voiceStationText) voiceStationText.style.color = 'var(--text-secondary)';
     }
 
     voiceToastTimer = setTimeout(() => {
       if (!voiceStation || voiceStation.hidden) return;
       if (isListening) {
-        if (voiceStationIcon) voiceStationIcon.textContent = '🔴';
-        if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
+        if (voiceStationIcon) voiceStationIcon.innerHTML = SVG_MIC;
+        if (voiceStationTitle) voiceStationTitle.style.color = 'var(--accent)';
         if (voiceStationText) {
-          voiceStationText.textContent = '🔴 Microphone live: Listening for speech (or click any chip below)...';
-          voiceStationText.style.color = 'var(--muted2)';
+          voiceStationText.textContent = 'Microphone live: Listening for speech (or click any action chip below)...';
+          voiceStationText.style.color = 'var(--text-secondary)';
         }
       } else {
-        if (voiceStationIcon) voiceStationIcon.textContent = '🎤';
-        if (voiceStationTitle) voiceStationTitle.style.color = 'var(--cyan)';
+        if (voiceStationIcon) voiceStationIcon.innerHTML = SVG_MIC;
+        if (voiceStationTitle) voiceStationTitle.style.color = 'var(--accent)';
         if (voiceStationText) {
           voiceStationText.textContent = 'Ready. Speak any command into your microphone or click any voice command below...';
-          voiceStationText.style.color = 'var(--muted2)';
+          voiceStationText.style.color = 'var(--text-secondary)';
         }
       }
     }, 4500);
@@ -1213,7 +1225,7 @@ Earth Observation archives and is free for open educational and research use.
         return;
       }
       if (voiceEngineBadge) {
-        voiceEngineBadge.textContent = '🤖 Loading Local AI...';
+        voiceEngineBadge.textContent = 'Loading Local AI...';
         voiceEngineBadge.classList.add('loading');
       }
 
@@ -1233,18 +1245,18 @@ Earth Observation archives and is free for open educational and research use.
       isAiModelLoading = false;
       console.log('Local AI Speech Commands Model Loaded Successfully!');
       if (voiceEngineBadge) {
-        voiceEngineBadge.textContent = '🤖 Local AI: ACTIVE';
+        voiceEngineBadge.textContent = 'Local AI: Active';
         voiceEngineBadge.classList.remove('loading');
         voiceEngineBadge.classList.add('active');
       }
       if (voiceStationText && !isListening) {
-        voiceStationText.textContent = '🤖 Local AI Voice Ready! Say: "Go" (Play), "Stop" (Pause), "Three" (Heat Dome), "Up" (Volume)';
+        voiceStationText.textContent = 'Local AI Voice Ready. Say "GO" (Play), "STOP" (Pause), "THREE" (Story 3), "UP" (Volume)';
       }
     } catch (err) {
       console.warn('Could not load local AI speech model:', err);
       isAiModelLoading = false;
       if (voiceEngineBadge) {
-        voiceEngineBadge.textContent = '🤖 Local AI: Standby';
+        voiceEngineBadge.textContent = 'Local AI: Standby';
       }
     }
   }
@@ -1286,10 +1298,10 @@ Earth Observation archives and is free for open educational and research use.
           // Provide instant polite feedback if an out-of-vocabulary word (like "pause") was spoken
           if (transcriptPlaceholder) {
             transcriptPlaceholder.style.display = 'inline';
-            transcriptPlaceholder.innerHTML = '⚠️ Unrecognized word. To pause, speak: <strong>"STOP"</strong> (or click 🗣️ "Pause")';
+            transcriptPlaceholder.innerHTML = 'Unrecognized word. To pause, speak: <strong>"STOP"</strong> (or click "Pause")';
           }
           if (voiceStationText) {
-            voiceStationText.textContent = '⚠️ Unrecognized word. Say "STOP" (to pause), "GO" (to play), "THREE" (Story 3)';
+            voiceStationText.textContent = 'Unrecognized word. Speak "STOP" to pause, "GO" to play, "THREE" for Story 3.';
           }
         }
       }, {
@@ -1326,21 +1338,21 @@ Earth Observation archives and is free for open educational and research use.
     clickToSpeakActive = true;
     if (btnClickToSpeak) {
       btnClickToSpeak.classList.add('listening');
-      if (pttText) pttText.textContent = 'Listening... Speak now!';
-      if (pttIcon) pttIcon.textContent = '🔴';
+      if (pttText) pttText.textContent = 'Listening... Speak now';
+      if (pttIcon) pttIcon.innerHTML = SVG_MIC;
     }
     if (btnVoiceToggle) {
       btnVoiceToggle.classList.add('listening', 'active');
       btnVoiceToggle.setAttribute('aria-pressed', 'true');
       if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: LISTENING';
-      if (micIcon) micIcon.textContent = '🔴';
+      if (micIcon) micIcon.innerHTML = SVG_MIC;
     }
     if (transcriptPlaceholder) {
       transcriptPlaceholder.style.display = 'inline';
-      transcriptPlaceholder.textContent = '🔴 Listening... Say "Go", "Stop", "Three", "Up", "Down", "Scan"';
+      transcriptPlaceholder.textContent = 'Listening... Speak: "GO", "STOP", "THREE", "UP", "DOWN", "YES"';
     }
     if (transcriptInterim) transcriptInterim.innerHTML = '';
-    updateVoiceStationStatus('🔴 Listening... Speak your command into your microphone now', 'live');
+    updateVoiceStationStatus('Listening: Speak your command into your microphone now', 'live');
     triggerHaptic([30, 20]);
 
     // Start hardware VU meter for this single utterance
@@ -1385,12 +1397,12 @@ Earth Observation archives and is free for open educational and research use.
     if (btnClickToSpeak) {
       btnClickToSpeak.classList.remove('listening');
       if (pttText) pttText.textContent = 'Click to Speak';
-      if (pttIcon) pttIcon.textContent = '🎙️';
+      if (pttIcon) pttIcon.innerHTML = SVG_MIC;
     }
     if (btnVoiceToggle) {
       btnVoiceToggle.classList.remove('listening');
       if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: READY';
-      if (micIcon) micIcon.textContent = '🎤';
+      if (micIcon) micIcon.innerHTML = SVG_MIC;
     }
 
     if (reasonMessage) {
@@ -1406,7 +1418,7 @@ Earth Observation archives and is free for open educational and research use.
     const pct = Math.round(score * 100);
     if (transcriptPlaceholder) transcriptPlaceholder.style.display = 'none';
     if (transcriptInterim) {
-      transcriptInterim.innerHTML = `<span class="heard-tag">🗣️ Spoken Word:</span> <strong class="heard-words">"${word.toUpperCase()}"</strong> <span style="font-size:0.7rem;color:var(--cyan)">(${pct}% AI match)</span>`;
+      transcriptInterim.innerHTML = `<span class="heard-tag">Detected:</span> <strong class="heard-words">"${word.toUpperCase()}"</strong> <span style="font-size:0.7rem;color:var(--accent)">(${pct}% match)</span>`;
     }
 
     triggerHaptic(20);
@@ -1417,60 +1429,60 @@ Earth Observation archives and is free for open educational and research use.
     // Map the 18 words to Earth Jukebox actions:
     switch (word) {
       case 'go':
-        updateVoiceStationStatus(`🗣️ AI Voice: "GO" ➔ PLAY`, 'success');
+        updateVoiceStationStatus(`Voice Command: "GO" ➔ PLAY`, 'success');
         AudioEngine.play();
         break;
       case 'stop':
-        updateVoiceStationStatus(`🗣️ AI Voice: "STOP" ➔ PAUSE`, 'success');
+        updateVoiceStationStatus(`Voice Command: "STOP" ➔ PAUSE`, 'success');
         AudioEngine.pause();
         break;
       case 'one':
-        updateVoiceStationStatus(`🗣️ AI Voice: "ONE" ➔ Story 1 (Seasonal Cycle)`, 'success');
+        updateVoiceStationStatus(`Voice Command: "ONE" ➔ Series 1 (Seasonal Cycle)`, 'success');
         if (stories[0]) loadStory(stories[0]);
         break;
       case 'two':
-        updateVoiceStationStatus(`🗣️ AI Voice: "TWO" ➔ Story 2 (Tokyo Trend)`, 'success');
+        updateVoiceStationStatus(`Voice Command: "TWO" ➔ Series 2 (Tokyo Trend)`, 'success');
         if (stories[1]) loadStory(stories[1]);
         break;
       case 'three':
-        updateVoiceStationStatus(`🗣️ AI Voice: "THREE" ➔ Story 3 (Heat Dome ⭐)`, 'success');
+        updateVoiceStationStatus(`Voice Command: "THREE" ➔ Series 3 (Heat Dome)`, 'success');
         if (stories[2]) loadStory(stories[2]);
         break;
       case 'four':
-        updateVoiceStationStatus(`🗣️ AI Voice: "FOUR" ➔ Story 4 (Amazon Precipitation)`, 'success');
+        updateVoiceStationStatus(`Voice Command: "FOUR" ➔ Series 4 (Amazon Rainfall)`, 'success');
         if (stories[3]) loadStory(stories[3]);
         break;
       case 'five':
-        updateVoiceStationStatus(`🗣️ AI Voice: "FIVE" ➔ Story 5 (Australia Bushfires)`, 'success');
+        updateVoiceStationStatus(`Voice Command: "FIVE" ➔ Series 5 (Australia Bushfires)`, 'success');
         if (stories[4]) loadStory(stories[4]);
         break;
       case 'up':
-        updateVoiceStationStatus(`🗣️ AI Voice: "UP" ➔ Volume Boost (+3 dB)`, 'success');
+        updateVoiceStationStatus(`Voice Command: "UP" ➔ Gain Boost (+3 dB)`, 'success');
         volRng.value = Math.min(12, parseInt(volRng.value, 10) + 3);
         AudioEngine.setVolume(parseFloat(volRng.value));
         break;
       case 'down':
-        updateVoiceStationStatus(`🗣️ AI Voice: "DOWN" ➔ Volume Softer (-3 dB)`, 'success');
+        updateVoiceStationStatus(`Voice Command: "DOWN" ➔ Gain Softer (-3 dB)`, 'success');
         volRng.value = Math.max(-10, parseInt(volRng.value, 10) - 3);
         AudioEngine.setVolume(parseFloat(volRng.value));
         break;
       case 'right':
-        updateVoiceStationStatus(`🗣️ AI Voice: "RIGHT" ➔ Next Frame`, 'success');
+        updateVoiceStationStatus(`Voice Command: "RIGHT" ➔ Next Frame`, 'success');
         AudioEngine.pause();
         AudioEngine.seek(AudioEngine.currentIndex + 1);
         break;
       case 'left':
-        updateVoiceStationStatus(`🗣️ AI Voice: "LEFT" ➔ Previous Frame`, 'success');
+        updateVoiceStationStatus(`Voice Command: "LEFT" ➔ Previous Frame`, 'success');
         AudioEngine.pause();
         AudioEngine.seek(AudioEngine.currentIndex - 1);
         break;
       case 'yes':
-        updateVoiceStationStatus(`🗣️ AI Voice: "YES" ➔ Run Anomaly Sonar Scan`, 'success');
+        updateVoiceStationStatus(`Voice Command: "YES" ➔ Run Anomaly Sonar Scan`, 'success');
         setWorkstationMode('scanner');
         runHighSpeedScanner();
         break;
       case 'no':
-        updateVoiceStationStatus(`🗣️ AI Voice: "NO" ➔ Return to Mission Explorer`, 'success');
+        updateVoiceStationStatus(`Voice Command: "NO" ➔ Return to Mission Explorer`, 'success');
         setWorkstationMode('explorer');
         break;
       default:
@@ -1509,8 +1521,8 @@ Earth Observation archives and is free for open educational and research use.
       btnVoiceToggle.classList.remove('active', 'listening');
       btnVoiceToggle.setAttribute('aria-pressed', 'false');
     }
-    if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice Control: OFF';
-    if (micIcon) micIcon.textContent = '🎤';
+    if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: OFF';
+    if (micIcon) micIcon.innerHTML = SVG_MIC;
   }
 
   function executeVoiceCommand(rawTranscript) {
@@ -1519,7 +1531,7 @@ Earth Observation archives and is free for open educational and research use.
     if (transcriptInterim) {
       transcriptInterim.innerHTML = `<span class="heard-tag">Executed:</span> <span class="heard-words">"${text}"</span>`;
     }
-    updateVoiceStationStatus(`🗣️ Executing: "${text}"`, 'success');
+    updateVoiceStationStatus(`Executing: "${text}"`, 'success');
     triggerHaptic(20);
 
     // Stop listening once command is parsed
@@ -1658,8 +1670,8 @@ Earth Observation archives and is free for open educational and research use.
             btnVoiceToggle.setAttribute('aria-pressed', 'true');
           }
           if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice Control: ACTIVE';
-          if (micIcon) micIcon.textContent = '🔴';
-          updateVoiceStationStatus('🔴 Microphone live: Listening for speech (speak now or click any chip below)...', 'live');
+          if (micIcon) micIcon.innerHTML = SVG_MIC;
+          updateVoiceStationStatus('Microphone live: Listening for speech (speak now or click any action chip below)...', 'live');
           if (transcriptPlaceholder) {
             transcriptPlaceholder.style.display = 'inline';
             transcriptPlaceholder.textContent = 'Listening... Speak words like "Play", "Story 3", "Faster", "Louder"';
@@ -1668,7 +1680,7 @@ Earth Observation archives and is free for open educational and research use.
         };
 
         speechRecognition.onaudiostart = () => {
-          if (transcriptPlaceholder) transcriptPlaceholder.textContent = '🎙️ Audio signal detected! Listening for words...';
+          if (transcriptPlaceholder) transcriptPlaceholder.textContent = 'Audio signal detected: processing voice stream...';
         };
 
         speechRecognition.onsoundstart = () => {
@@ -1676,7 +1688,7 @@ Earth Observation archives and is free for open educational and research use.
         };
 
         speechRecognition.onspeechstart = () => {
-          if (transcriptPlaceholder) transcriptPlaceholder.textContent = 'Voice detected! Converting speech to text...';
+          if (transcriptPlaceholder) transcriptPlaceholder.textContent = 'Voice detected: converting speech to command...';
         };
 
         speechRecognition.onresult = (e) => {
@@ -1692,7 +1704,7 @@ Earth Observation archives and is free for open educational and research use.
             }
           }
 
-          // Live visual feedback: user sees their voice being fed in real-time!
+          // Live visual feedback: user sees their voice being fed in real-time
           if (transcriptInterim) {
             if (interimText) {
               if (transcriptPlaceholder) transcriptPlaceholder.style.display = 'none';
@@ -1716,20 +1728,20 @@ Earth Observation archives and is free for open educational and research use.
               btnVoiceToggle.setAttribute('aria-pressed', 'true');
             }
             if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: ACTIVE';
-            if (micIcon) micIcon.textContent = '🎤';
-            updateVoiceStationStatus('ℹ️ Microphone blocked or requires HTTP. Local AI Voice & Command Chips active!', 'alert');
+            if (micIcon) micIcon.innerHTML = SVG_MIC;
+            updateVoiceStationStatus('Microphone blocked or requires HTTP. Local AI Voice & Command Chips active!', 'alert');
           } else if (e.error === 'network') {
             console.info('Google Cloud speech network disabled in Chromium. Local AI speech engine is running.');
             if (voiceEngineBadge) {
-              voiceEngineBadge.textContent = '🤖 Local AI (Zero-Cloud)';
+              voiceEngineBadge.textContent = 'Local AI Engine';
               voiceEngineBadge.classList.add('active');
             }
-            updateVoiceStationStatus('🤖 Local AI Speech Active! Say: "Go" (Play), "Stop" (Pause), "Three" (Heat Dome), "Up" (Volume)', 'live');
+            updateVoiceStationStatus('Local AI Speech Active: Say "GO" (Play), "STOP" (Pause), "THREE" (Heat Dome), "UP" (Volume)', 'live');
             startLocalAiListening();
           } else if (e.error === 'no-speech') {
             if (isListening && transcriptPlaceholder) {
               transcriptPlaceholder.style.display = 'inline';
-              transcriptPlaceholder.textContent = 'Listening... Speak clearly: "Go", "Stop", "Three", "Up", "Down"';
+              transcriptPlaceholder.textContent = 'Listening... Speak clearly: "GO", "STOP", "THREE", "UP", "DOWN"';
             }
           }
         };
@@ -1742,7 +1754,7 @@ Earth Observation archives and is free for open educational and research use.
               btnVoiceToggle.classList.remove('listening', 'active');
               btnVoiceToggle.setAttribute('aria-pressed', 'false');
               voiceBtnLabel.textContent = 'Voice Control: OFF';
-              micIcon.textContent = '🎤';
+              micIcon.innerHTML = SVG_MIC;
             }
           }
         };
@@ -1968,13 +1980,13 @@ Earth Observation archives and is free for open educational and research use.
     AudioEngine.onStateChange = (playing) => {
       btnPlay.setAttribute('aria-pressed', playing ? 'true' : 'false');
       if (playing) {
-        playGlyph.textContent = '⏸';
-        playLbl.innerHTML = 'PAUSE <small class="voice-badge-tag">[Say "STOP"]</small>';
+        playGlyph.innerHTML = '<svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="6" y="4" width="4" height="16" fill="currentColor"/><rect x="14" y="4" width="4" height="16" fill="currentColor"/></svg>';
+        playLbl.innerHTML = 'PAUSE <span class="voice-badge-tag">[Say "STOP"]</span>';
         telDot.className = 'tel-dot active';
         telStatus.textContent = 'PLAYING';
       } else {
-        playGlyph.textContent = '▶';
-        playLbl.innerHTML = 'PLAY <small class="voice-badge-tag">[Say "GO"]</small>';
+        playGlyph.innerHTML = '<svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor"/></svg>';
+        playLbl.innerHTML = 'PLAY <span class="voice-badge-tag">[Say "GO"]</span>';
         telDot.className = 'tel-dot';
         telStatus.textContent = 'PAUSED';
         if (curData && curMeta) {

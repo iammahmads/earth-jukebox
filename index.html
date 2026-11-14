@@ -3,8 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Earth Jukebox — Applied NASA Earth Science Sonification Workstation</title>
+  <title>Earth Jukebox — NASA Applied Climate Sonification Workstation</title>
   <meta name="description" content="Applied Earth observation sonification workstation: BVI science accessibility, binaural climate comparison, and aural anomaly screening. NASA Space Apps 2026.">
+  
+  <!-- Precision Typography: Inter (UI) & JetBrains Mono (Telemetry) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="assets/favicon.ico">
@@ -12,14 +18,16 @@
 <body>
   <a href="#main" class="skip-link">Skip to main content</a>
 
-  <!-- ═══ TOP MISSION CONTROL NAV ═══ -->
+  <!-- ═══ TOP MISSION CONTROL NAVIGATION ═══ -->
   <nav class="topnav" role="navigation" aria-label="Application navigation">
     <div class="topnav-inner">
-      <div class="brand">
-        <div class="brand-orb" aria-hidden="true"><span class="brand-pulse"></span>🌍</div>
-        <div>
+      <div class="brand" tabindex="0" role="button" aria-label="Earth Jukebox home">
+        <div class="brand-symbol" aria-hidden="true">
+          <svg class="icon icon-lg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+        </div>
+        <div class="brand-meta">
           <span class="brand-name">EARTH JUKEBOX</span>
-          <span class="brand-sub">NASA Applied Climate Sonification Workstation</span>
+          <span class="brand-sub">NASA Applied Climate Sonification Console</span>
         </div>
       </div>
 
@@ -29,37 +37,45 @@
           <div class="tel-dot" id="tel-dot"></div>
           <span class="tel-val" id="tel-status">STANDBY</span>
         </div>
-        <div class="tel-sep" aria-hidden="true">|</div>
+        <div class="tel-sep" aria-hidden="true">/</div>
         <div class="tel-block">
           <span class="tel-key">DATE</span>
           <span class="tel-val" id="tel-date">—</span>
         </div>
-        <div class="tel-sep" aria-hidden="true">|</div>
+        <div class="tel-sep" aria-hidden="true">/</div>
         <div class="tel-block">
           <span class="tel-key">VALUE</span>
           <span class="tel-val" id="tel-value">—</span>
         </div>
-        <div class="tel-sep" aria-hidden="true">|</div>
+        <div class="tel-sep" aria-hidden="true">/</div>
         <div class="tel-block">
           <span class="tel-key">FRAME</span>
           <span class="tel-val" id="tel-frame">—</span>
         </div>
       </div>
 
-      <div class="nav-badges">
-        <button id="btn-voice-toggle" class="nav-interactive-btn" aria-label="Toggle voice control mode" aria-pressed="false" title="Click to speak voice commands (Play, Pause, Story 1-5, etc.)">
-          <span class="mic-icon" id="mic-icon">🎤</span>
-          <span id="voice-btn-label">Voice Control: OFF</span>
+      <div class="nav-actions">
+        <button id="btn-voice-toggle" class="nav-btn" aria-label="Toggle voice control mode" aria-pressed="false" title="Click to open voice command station (Push-to-talk mic)">
+          <span id="mic-icon" class="nav-btn-icon">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          </span>
+          <span id="voice-btn-label">Voice: OFF</span>
         </button>
-        <button id="btn-synaptics-toggle" class="nav-interactive-btn active" aria-label="Toggle Synaptics touch and haptics" aria-pressed="true" title="Synaptics gesture & haptic feedback enabled">
-          <span class="haptic-icon">🎛️</span>
+
+        <button id="btn-synaptics-toggle" class="nav-btn active" aria-label="Toggle Synaptics touch and haptics" aria-pressed="true" title="Synaptics gesture & haptic feedback enabled">
+          <span class="nav-btn-icon">
+            <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 12h10"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
           <span id="synaptics-btn-label">Synaptics: ACTIVE</span>
         </button>
-        <button id="btn-voice-guide" class="nav-help-btn" aria-label="Voice command list" title="View voice commands and Synaptics gestures">
-          ❓ Voice &amp; Touch
+
+        <button id="btn-voice-guide" class="nav-btn" aria-label="Voice & Touch Guide" title="View voice commands and Synaptics touchpad gestures">
+          <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+          <span>Guide</span>
         </button>
-        <span class="pill pill-nasa">NASA SPACE APPS 2026</span>
-        <span class="pill pill-live" id="pill-live" hidden>◉ LIVE RUN</span>
+
+        <span class="pill-badge">NASA SPACE APPS 2026</span>
+        <span class="pill-badge pill-live" id="pill-live" hidden>LIVE RUN</span>
       </div>
     </div>
   </nav>
@@ -69,88 +85,94 @@
     <div class="voice-station-inner">
       <div class="voice-station-status-row">
         <div class="voice-status-group">
-          <span class="voice-pulse-ring" id="voice-pulse-ring"></span>
-          <span id="voice-station-icon">🎤</span>
-          <strong id="voice-station-title">VOICE COMMAND STATION:</strong>
-          <span id="voice-engine-badge" class="voice-engine-badge">🤖 Local AI Engine</span>
-          <span id="voice-station-text">Ready. Speak any command into your microphone or click any voice command below...</span>
+          <span class="voice-pulse-ring" id="voice-pulse-ring" aria-hidden="true"></span>
+          <span id="voice-station-icon">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          </span>
+          <span class="voice-title" id="voice-station-title">Voice Command Station:</span>
+          <span id="voice-engine-badge" class="voice-engine-badge">Local Neural Engine</span>
+          <span id="voice-station-text">Ready. Click mic to speak or select a quick action below.</span>
         </div>
 
         <!-- Real-Time Microphone Hardware Audio Level (VU Meter) -->
         <div class="voice-mic-telemetry" id="voice-mic-telemetry">
-          <span class="vu-label">🎙️ MIC FEED:</span>
+          <span class="vu-label">MIC INPUT</span>
           <div class="vu-meter-bar" title="Live audio feed from your microphone">
             <div class="vu-meter-fill" id="vu-meter-fill" style="width: 0%;"></div>
           </div>
-          <span class="vu-val" id="vu-meter-val">0% (Silent)</span>
-          <button id="btn-test-mic" class="btn-test-mic" title="Test & diagnose microphone audio input">⚡ Test Mic Feed</button>
+          <span class="vu-val" id="vu-meter-val">0% (Idle)</span>
+          <button id="btn-test-mic" class="btn-test-mic" title="Test & diagnose microphone audio input">Test Mic</button>
         </div>
 
-        <button id="btn-close-voice-station" class="btn-voice-station-close" aria-label="Close voice station">✕ Minimize</button>
+        <button id="btn-close-voice-station" class="btn-voice-station-close" aria-label="Close voice station">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Minimize
+        </button>
       </div>
 
       <!-- Real-Time Speech Feed Display (YouTube-Style On-Demand Mic Button) -->
       <div class="voice-live-feed-row" id="voice-live-feed-row">
-        <!-- On-Demand YouTube-Style Mic Button -->
         <button id="btn-click-to-speak" class="btn-click-to-speak" aria-label="Click to speak command" title="Click to speak (like YouTube voice search)">
-          <span class="mic-pulse-circle" id="mic-pulse-circle"></span>
-          <span class="ptt-icon" id="ptt-icon">🎙️</span>
-          <span class="ptt-text" id="ptt-text">Click to Speak</span>
+          <span class="mic-pulse-circle" id="mic-pulse-circle" aria-hidden="true"></span>
+          <span id="ptt-icon">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          </span>
+          <span id="ptt-text">Click to Speak</span>
         </button>
 
-        <span class="feed-tag">LIVE FEED:</span>
+        <span class="feed-tag">TRANSCRIPT</span>
         <div class="voice-live-transcript" id="voice-live-transcript" aria-live="polite">
-          <span class="transcript-placeholder" id="transcript-placeholder">Click mic &amp; speak: "STOP" (Pause), "GO" (Play), "THREE" (Heat Dome), "UP" / "DOWN" (Volume), "YES" (Scan)</span>
+          <span class="transcript-placeholder" id="transcript-placeholder">Click mic and speak: "STOP" (Pause), "GO" (Play), "THREE" (Story 3), "UP" / "DOWN" (Volume), "YES" (Scan)</span>
           <span class="transcript-interim" id="transcript-interim"></span>
         </div>
       </div>
 
       <!-- Quick-Action Voice Command Chips with Spoken Words in Brackets -->
       <div class="voice-chips-row" role="group" aria-label="Quick voice command chips">
-        <span class="voice-chips-label">Quick Action [What to Speak]:</span>
-        <button class="voice-chip" data-cmd="stop">⏸️ Pause <span class="chip-bracket">[Say "STOP"]</span></button>
-        <button class="voice-chip" data-cmd="go">▶️ Play <span class="chip-bracket">[Say "GO"]</span></button>
-        <button class="voice-chip" data-cmd="three">⭐ Heat Dome <span class="chip-bracket">[Say "THREE"]</span></button>
-        <button class="voice-chip" data-cmd="up">🔊 Louder <span class="chip-bracket">[Say "UP"]</span></button>
-        <button class="voice-chip" data-cmd="down">🔉 Softer <span class="chip-bracket">[Say "DOWN"]</span></button>
-        <button class="voice-chip" data-cmd="right">⏭️ Next <span class="chip-bracket">[Say "RIGHT"]</span></button>
-        <button class="voice-chip" data-cmd="left">⏮️ Prev <span class="chip-bracket">[Say "LEFT"]</span></button>
-        <button class="voice-chip" data-cmd="one">🌱 Seasonal <span class="chip-bracket">[Say "ONE"]</span></button>
-        <button class="voice-chip" data-cmd="two">📈 Tokyo Trend <span class="chip-bracket">[Say "TWO"]</span></button>
-        <button class="voice-chip" data-cmd="four">🌧️ Amazon Rain <span class="chip-bracket">[Say "FOUR"]</span></button>
-        <button class="voice-chip" data-cmd="five">🔥 Australia <span class="chip-bracket">[Say "FIVE"]</span></button>
-        <button class="voice-chip" data-cmd="yes">📡 Sonar Scan <span class="chip-bracket">[Say "YES"]</span></button>
-        <button class="voice-chip" data-cmd="no">🗺️ Mission Map <span class="chip-bracket">[Say "NO"]</span></button>
+        <span class="voice-chips-label">Quick Actions:</span>
+        <button class="voice-chip" data-cmd="stop">Pause <span class="chip-bracket">[Say "STOP"]</span></button>
+        <button class="voice-chip" data-cmd="go">Play <span class="chip-bracket">[Say "GO"]</span></button>
+        <button class="voice-chip" data-cmd="three">Heat Dome <span class="chip-bracket">[Say "THREE"]</span></button>
+        <button class="voice-chip" data-cmd="up">Louder <span class="chip-bracket">[Say "UP"]</span></button>
+        <button class="voice-chip" data-cmd="down">Softer <span class="chip-bracket">[Say "DOWN"]</span></button>
+        <button class="voice-chip" data-cmd="right">Next <span class="chip-bracket">[Say "RIGHT"]</span></button>
+        <button class="voice-chip" data-cmd="left">Prev <span class="chip-bracket">[Say "LEFT"]</span></button>
+        <button class="voice-chip" data-cmd="one">Seasonal <span class="chip-bracket">[Say "ONE"]</span></button>
+        <button class="voice-chip" data-cmd="two">Tokyo Trend <span class="chip-bracket">[Say "TWO"]</span></button>
+        <button class="voice-chip" data-cmd="four">Amazon Rain <span class="chip-bracket">[Say "FOUR"]</span></button>
+        <button class="voice-chip" data-cmd="five">Australia <span class="chip-bracket">[Say "FIVE"]</span></button>
+        <button class="voice-chip" data-cmd="yes">Sonar Scan <span class="chip-bracket">[Say "YES"]</span></button>
+        <button class="voice-chip" data-cmd="no">Explorer <span class="chip-bracket">[Say "NO"]</span></button>
       </div>
 
       <!-- Action & Spoken Word Direct Mapping Directory -->
       <div class="voice-directory-box">
         <div class="voice-directory-header">
-          <span>📖 ACTION &amp; SPOKEN WORD DIRECT MAPPING DIRECTORY:</span>
-          <span style="color:var(--muted)">Click mic button &amp; speak the exact yellow word in brackets</span>
+          <span>COMMAND MAPPING DIRECTORY</span>
+          <span>Click mic button and speak the exact keyword</span>
         </div>
         <div class="voice-directory-grid">
-          <div class="voice-directory-item"><span class="v-act">⏸️ Pause Audio</span><span class="v-speak">[Say "STOP"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">▶️ Play Audio</span><span class="v-speak">[Say "GO"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">⭐ 2021 Heat Dome</span><span class="v-speak">[Say "THREE"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">🔊 Volume Up (+3dB)</span><span class="v-speak">[Say "UP"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">🔉 Volume Down (-3dB)</span><span class="v-speak">[Say "DOWN"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">⏭️ Step Forward</span><span class="v-speak">[Say "RIGHT"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">⏮️ Step Backward</span><span class="v-speak">[Say "LEFT"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">🌱 Seasonal Cycle</span><span class="v-speak">[Say "ONE"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">📈 Tokyo Warming</span><span class="v-speak">[Say "TWO"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">🌧️ Amazon Rainfall</span><span class="v-speak">[Say "FOUR"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">🔥 Australia Fires</span><span class="v-speak">[Say "FIVE"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">📡 Sonar Anomaly Scan</span><span class="v-speak">[Say "YES"]</span></div>
-          <div class="voice-directory-item"><span class="v-act">🗺️ Mission Explorer</span><span class="v-speak">[Say "NO"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Pause Audio</span><span class="v-speak">[STOP]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Play Audio</span><span class="v-speak">[GO]</span></div>
+          <div class="voice-directory-item"><span class="v-act">2021 Heat Dome</span><span class="v-speak">[THREE]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Volume Up (+3dB)</span><span class="v-speak">[UP]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Volume Down (-3dB)</span><span class="v-speak">[DOWN]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Step Forward</span><span class="v-speak">[RIGHT]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Step Backward</span><span class="v-speak">[LEFT]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Seasonal Cycle</span><span class="v-speak">[ONE]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Tokyo Warming</span><span class="v-speak">[TWO]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Amazon Rainfall</span><span class="v-speak">[FOUR]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Australia Fires</span><span class="v-speak">[FIVE]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Sonar Anomaly Scan</span><span class="v-speak">[YES]</span></div>
+          <div class="voice-directory-item"><span class="v-act">Mission Explorer</span><span class="v-speak">[NO]</span></div>
         </div>
       </div>
 
       <!-- Voice Command Text Input for typing commands -->
       <form id="voice-input-form" class="voice-input-form" onsubmit="return false;">
         <label for="voice-text-input" class="sr-only">Type a voice command</label>
-        <input type="text" id="voice-text-input" class="voice-text-input" placeholder="Type or speak a voice command (e.g. 'play heat dome', 'faster', 'louder') and press Enter...">
-        <button type="submit" id="btn-voice-input-submit" class="btn-voice-input-submit">🗣️ Execute Command</button>
+        <input type="text" id="voice-text-input" class="voice-text-input" placeholder="Type command (e.g. 'play heat dome', 'faster', 'louder') and press Enter...">
+        <button type="submit" id="btn-voice-input-submit" class="btn-voice-input-submit">Execute</button>
       </form>
     </div>
   </div>
@@ -161,95 +183,143 @@
     <!-- ──────────── LANDING VIEW ──────────── -->
     <section id="view-landing" class="view" aria-label="Story Selection and Use Cases">
 
-      <!-- Real-World Purpose & Impact Banner -->
-      <div class="mission-purpose-card">
-        <div class="purpose-badge">REAL-WORLD SCIENTIFIC IMPACT</div>
-        <h2>Turning Inaccessible Satellite Visuals into Decipherable Sound</h2>
-        <p>
-          NASA collects petabytes of Earth imagery every day. But <strong>2.2 billion visually impaired individuals</strong> 
-          cannot inspect satellite heatmaps, and human researchers looking at hundreds of line charts suffer visual fatigue. 
-          <strong>Earth Jukebox</strong> solves both problems: human hearing has superior temporal acuity to the human eye, 
-          enabling rapid <em>aural screening</em> of climate anomalies, binaural era comparison, and fully accessible GIS science.
-        </p>
-
-        <!-- 3 Core Applied Use Cases -->
-        <div class="usecases-grid">
-          <div class="usecase-card">
-            <span class="usecase-icon">♿</span>
-            <div class="usecase-body">
-              <strong>1. BVI Earth Science Accessibility</strong>
-              <p>Enables blind and low-vision scientists and students to explore NASA GIS datasets by ear, navigating multi-year climate trends via pitch intervals and tactile acoustic cursors.</p>
-            </div>
+      <!-- Editorial Asymmetrical Hero -->
+      <div class="mission-editorial-hero">
+        <div class="hero-content">
+          <div class="hero-meta-label">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Applied NASA Climate Sonification
           </div>
-          <div class="usecase-card">
-            <span class="usecase-icon">🔍</span>
-            <div class="usecase-body">
-              <strong>2. Aural Anomaly Screening</strong>
-              <p>The human ear can detect transient micro-deviations (2–5 ms) that visual chart-smoothing hides. Automates statistical outlier detection with instant acoustic sonar alarms.</p>
-            </div>
-          </div>
-          <div class="usecase-card">
-            <span class="usecase-icon">⚖️</span>
-            <div class="usecase-body">
-              <strong>3. Binaural Era Comparator</strong>
-              <p>Plays a historical baseline in the Left Ear and modern anomaly in the Right Ear. Harmonic consonance indicates stability; dissonance and acoustic beating reveal climate destabilization.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hero Visualizer -->
-      <div class="landing-hero">
-        <div class="hero-text">
-          <h1>Select a Verified<br><span class="hero-accent">NASA Climate Series</span></h1>
-          <p class="hero-desc">
-            Explore 5 global climate datasets from NASA POWER, VEDA, and GIBS. Each story implements distinct 
-            synthesis architecture, synced satellite imagery, and quantitative anomaly diagnostics.
+          <h1 class="hero-headline">Deciphering Earth's Climate by Sound</h1>
+          <p class="hero-description">
+            NASA collects petabytes of Earth observation data every day. While <strong>2.2 billion visually impaired individuals</strong> cannot inspect satellite heatmaps and visual chart inspection induces fatigue, human hearing offers superior temporal resolution. <strong>Earth Jukebox</strong> translates multi-decadal satellite observations into continuous physical sound.
           </p>
         </div>
-        <div class="hero-viz" aria-hidden="true">
-          <canvas id="hero-canvas" width="320" height="150"></canvas>
+
+        <!-- Hero Spec Card -->
+        <div class="hero-spec-card">
+          <div class="spec-header">
+            <span class="spec-title">TELEMETRY &amp; SYNTHESIS CORE</span>
+            <span class="spec-badge">ENGINE V4 READY</span>
+          </div>
+          <div class="spec-viz-container" aria-hidden="true">
+            <canvas id="hero-canvas" width="320" height="150"></canvas>
+          </div>
+          <div class="spec-grid">
+            <div class="spec-stat">
+              <span class="spec-stat-key">VERIFIED SERIES</span>
+              <span class="spec-stat-val">5 Global Datasets</span>
+            </div>
+            <div class="spec-stat">
+              <span class="spec-stat-key">ACCURACY</span>
+              <span class="spec-stat-val">Deterministic C3–C6</span>
+            </div>
+            <div class="spec-stat">
+              <span class="spec-stat-key">AI SPEECH</span>
+              <span class="spec-stat-val">On-Device (0 Cloud)</span>
+            </div>
+            <div class="spec-stat">
+              <span class="spec-stat-key">LATENCY</span>
+              <span class="spec-stat-val">&lt; 15 ms Web Audio</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="section-label">CHOOSE DATASET TO LAUNCH WORKSTATION</div>
-      <div id="stories-grid" class="stories-grid" role="list">
-        <!-- Injected dynamically by app.js -->
+      <!-- 3 Core Applied Use Cases Grid -->
+      <div class="usecases-section">
+        <div class="section-label">Core Mission Capabilities</div>
+        <div class="usecases-grid">
+          <div class="usecase-card">
+            <div class="usecase-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            </div>
+            <div class="usecase-body">
+              <div class="usecase-title">1. BVI Earth Science Accessibility</div>
+              <p class="usecase-text">Enables blind and low-vision researchers and students to explore NASA GIS datasets through tactile pitch intervals and acoustic cursors.</p>
+            </div>
+          </div>
+
+          <div class="usecase-card">
+            <div class="usecase-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+            <div class="usecase-body">
+              <div class="usecase-title">2. Aural Anomaly Screening</div>
+              <p class="usecase-text">Detects transient 2–5 ms micro-deviations that visual chart-smoothing hides, with automated 2σ statistical outlier sonar alerts.</p>
+            </div>
+          </div>
+
+          <div class="usecase-card">
+            <div class="usecase-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+            </div>
+            <div class="usecase-body">
+              <div class="usecase-title">3. Binaural Era Comparator</div>
+              <p class="usecase-text">Plays a historical baseline in the Left Ear and modern observation in the Right Ear. Harmonic consonance indicates stability; acoustic beating signals rapid drift.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- How Sound is Made Reference -->
+      <!-- Dataset Selection Grid -->
+      <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+        <div class="section-label">Verified Climate Series</div>
+        <div id="stories-grid" class="stories-grid" role="list">
+          <!-- Injected dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- Acoustic Mapping Methodology Reference -->
       <div class="how-section">
-        <div class="section-label">ACOUSTIC MAPPING METHODOLOGY</div>
+        <div class="section-label">Acoustic Mapping Architecture</div>
         <div class="how-grid">
           <div class="how-card">
-            <span class="how-icon">🎵</span>
-            <strong>Value → Pitch</strong>
-            <p>Monotonic linear mapping from $[min, max]$ to MIDI 48 (C3, 130.8 Hz) through MIDI 84 (C6, 1046.5 Hz).</p>
+            <div class="how-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            </div>
+            <div class="how-title">Value → Pitch</div>
+            <p class="how-desc">Monotonic linear mapping from data minimum to maximum across MIDI 48 (C3, 130.8 Hz) through MIDI 84 (C6, 1046.5 Hz).</p>
           </div>
+
           <div class="how-card">
-            <span class="how-icon">🎻</span>
-            <strong>Variability → Timbre</strong>
-            <p>Uniform spatial data = pure sine wave; high spatial entropy = rich harmonic sawtooth wave.</p>
+            <div class="how-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <div class="how-title">Variability → Timbre</div>
+            <p class="how-desc">Uniform spatial data renders as a pure sinusoidal tone; elevated spatial variance introduces rich harmonic sawtooth waves.</p>
           </div>
+
           <div class="how-card">
-            <span class="how-icon">⏱</span>
-            <strong>Change Rate → Tempo</strong>
-            <p>Dynamic playback pace: stable periods = 60 BPM; rapid anomalous swings = 160 BPM.</p>
+            <div class="how-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div class="how-title">Change Rate → Tempo</div>
+            <p class="how-desc">Dynamic playback speed: baseline stable periods pace at 60 BPM; anomalous swings accelerate to 160 BPM.</p>
           </div>
+
           <div class="how-card">
-            <span class="how-icon">🚨</span>
-            <strong>Thresholds → Alarm</strong>
-            <p>Crossing critical limits triggers a layered bell chime + noise burst and screen flash.</p>
+            <div class="how-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="how-title">Thresholds → Alarm</div>
+            <p class="how-desc">Crossing critical environmental limits fires a synchronized dissonant chime and high-contrast visual flash.</p>
           </div>
+
           <div class="how-card">
-            <span class="how-icon">🎙</span>
-            <strong>Story Persona</strong>
-            <p>Each story features dedicated synthesis: AM Flute · FM Drift · Crisis Distortion · Rain Pad · Wildfire Lead.</p>
+            <div class="how-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </div>
+            <div class="how-title">Story Persona</div>
+            <p class="how-desc">Each dataset uses tailored synthesis: AM Flute, FM Harmonic Drift, Crisis Distortion, Rainforest Rain Pad, or Wildfire Lead.</p>
           </div>
+
           <div class="how-card">
-            <span class="how-icon">🌐</span>
-            <strong>Longitude → Stereo Pan</strong>
-            <p>Geographic coordinates pan audio from Left channel (−180°) to Right channel (+180°).</p>
+            <div class="how-icon-box">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </div>
+            <div class="how-title">Longitude → Stereo Pan</div>
+            <p class="how-desc">Geographic longitude positions sound across stereo space: 180°W pans full left, prime meridian centers, and 180°E pans full right.</p>
           </div>
         </div>
       </div>
@@ -258,30 +328,39 @@
     <!-- ──────────── PLAYER WORKSTATION VIEW ──────────── -->
     <section id="view-player" class="view" hidden aria-label="Interactive Climate Sonification Workstation">
 
-      <!-- Workstation Mode Bar (The 4 Real-World Scientific Workstation Tools) -->
+      <!-- Workstation Navigation Bar -->
       <div class="workstation-nav-bar" role="navigation" aria-label="Workstation Tools">
-        <button id="btn-back" class="ctrl-back" aria-label="Return to catalog">← CATALOG</button>
+        <button id="btn-back" class="ctrl-back" aria-label="Return to catalog">
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          CATALOG
+        </button>
 
         <div class="workstation-tabs" role="tablist">
           <button class="ws-tab active" id="tab-mode-explorer" role="tab" aria-selected="true" data-mode="explorer">
-            🎯 Mission Explorer
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+            Mission Explorer
           </button>
           <button class="ws-tab" id="tab-mode-comparator" role="tab" aria-selected="false" data-mode="comparator">
-            ⚖️ Binaural Era Comparator
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+            Binaural Comparator
           </button>
           <button class="ws-tab" id="tab-mode-scanner" role="tab" aria-selected="false" data-mode="scanner">
-            🔍 Aural Anomaly Scanner
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Anomaly Scanner
           </button>
           <button class="ws-tab" id="tab-mode-accessibility" role="tab" aria-selected="false" data-mode="accessibility">
-            ♿ Accessible Earth Lab
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+            Accessible Earth Lab
           </button>
           <button class="ws-tab ws-tab-voice" id="tab-mode-voice" role="tab" aria-selected="false" data-mode="voice">
-            🎤 Voice Commander
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            Voice Command
           </button>
         </div>
 
         <button id="btn-export-report" class="btn-export" title="Export Scientific Diagnostics & Anomaly Report">
-          📋 Export Science Report
+          <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Export Report
         </button>
       </div>
 
@@ -292,7 +371,7 @@
 
       <!-- WORKSTATION TOOL PANELS -->
 
-      <!-- ═══ TOOL 1: MISSION EXPLORER (Default Synchronized Map + Visualizer) ═══ -->
+      <!-- ═══ TOOL 1: MISSION EXPLORER ═══ -->
       <div id="panel-explorer" class="ws-panel active">
         <div class="player-layout">
 
@@ -301,7 +380,7 @@
             <div class="map-container" role="region" aria-label="Synchronized satellite map">
               <canvas id="data-viz-canvas" class="data-viz-canvas" aria-hidden="true"></canvas>
               <div id="map"></div>
-              <div class="map-chip top-left" id="chip-date" aria-hidden="true">📅 —</div>
+              <div class="map-chip top-left" id="chip-date" aria-hidden="true">—</div>
               <div class="map-chip top-right" id="chip-dataset" aria-hidden="true">NASA POWER</div>
               <div class="map-chip bottom-right" id="chip-sync" aria-hidden="true">
                 <span class="live-dot-sm" id="live-dot-sm"></span> SYNCED
@@ -310,7 +389,7 @@
 
             <!-- Oscilloscope waveform -->
             <div class="osc-wrapper" aria-hidden="true">
-              <span class="osc-label">REAL-TIME WEB AUDIO ANALYSER (60 FPS)</span>
+              <span class="osc-label">WEB AUDIO SPECTRUM ANALYZER (60 FPS)</span>
               <canvas id="waveform-canvas" class="osc-canvas"></canvas>
             </div>
           </div>
@@ -343,7 +422,9 @@
 
             <!-- Alert banner -->
             <div class="alert-panel" id="alert-panel" hidden role="alert" aria-live="assertive">
-              <span class="alert-icon-big">🚨</span>
+              <div class="alert-icon-box">
+                <svg class="icon icon-lg" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
               <div>
                 <strong>THRESHOLD EXCEEDED</strong>
                 <p id="alert-text">—</p>
@@ -352,14 +433,14 @@
 
             <!-- Climate Narrative -->
             <div class="info-card">
-              <div class="info-card-title">📡 SCIENTIFIC NARRATIVE</div>
+              <div class="info-card-title">Scientific Narrative</div>
               <p id="narrative" class="narrative-text">—</p>
             </div>
 
             <!-- Sound Legend -->
             <div class="info-card">
               <div class="info-card-title-row">
-                <span class="info-card-title">🎧 SOUND SPECIFICATION</span>
+                <span class="info-card-title">Sound Specification</span>
                 <span class="synth-pill" id="synth-pill">—</span>
               </div>
               <div class="legend-gradient-row">
@@ -369,11 +450,11 @@
               </div>
               <div class="threshold-line" id="leg-threshold">Threshold alert: none</div>
               <div class="sample-row" role="group" aria-label="Preview sounds">
-                <span class="sample-label">PREVIEW:</span>
-                <button class="btn-sample" data-sample="low" aria-label="Low note">LOW</button>
-                <button class="btn-sample" data-sample="mid" aria-label="Mid note">MID</button>
-                <button class="btn-sample" data-sample="high" aria-label="High note">HIGH</button>
-                <button class="btn-sample btn-sample-alert" data-sample="marker" aria-label="Alert chime">🚨 ALARM</button>
+                <span class="sample-label">Preview:</span>
+                <button class="btn-sample" data-sample="low" aria-label="Low note">Low</button>
+                <button class="btn-sample" data-sample="mid" aria-label="Mid note">Mid</button>
+                <button class="btn-sample" data-sample="high" aria-label="High note">High</button>
+                <button class="btn-sample btn-sample-alert" data-sample="marker" aria-label="Alert chime">Alarm</button>
               </div>
             </div>
           </div>
@@ -384,19 +465,18 @@
       <div id="panel-comparator" class="ws-panel" hidden aria-label="Binaural Era Comparator">
         <div class="comparator-card">
           <div class="comparator-header">
-            <h3>⚖️ Binaural Climate Era Comparator (A/B Harmonic Acoustic Beating)</h3>
+            <h3>Binaural Climate Era Comparator (A/B Harmonic Acoustic Beating)</h3>
             <p>
-              Compare two different time periods simultaneously in your headphones. 
+              Compare two different observation dates simultaneously across stereo headphones. 
               <strong>Left Ear plays Era A (Baseline)</strong>; <strong>Right Ear plays Era B (Comparison)</strong>. 
-              If the values match, you hear pure acoustic consonance. As climate warming creates a gap, 
-              the pitch difference causes <strong>acoustic beating and harmonic dissonance</strong>!
+              Matching values produce harmonic consonance. Increasing temperature divergence produces physical acoustic beating and dissonance.
             </p>
           </div>
 
           <div class="comparator-grid">
             <!-- Era A (Left Ear) -->
             <div class="era-box era-left">
-              <div class="era-tag">LEFT EAR 🎧 (ERA A BASELINE)</div>
+              <div class="era-tag">LEFT EAR: ERA A (BASELINE)</div>
               <label for="comp-slider-a" class="era-label">Select Era A Date:</label>
               <input type="range" id="comp-slider-a" class="era-slider" min="0" max="100" value="0">
               <div class="era-readout">
@@ -408,18 +488,19 @@
 
             <!-- Inter-era Acoustic Delta Box -->
             <div class="delta-box">
-              <div class="delta-title">CLIMATE ACOUSTIC DELTA</div>
+              <div class="delta-title">ACOUSTIC FREQUENCY DELTA</div>
               <div class="delta-val" id="comp-delta-temp">+0.0°</div>
               <div class="delta-interval" id="comp-delta-interval">Unison (0 cents)</div>
               <div class="delta-desc" id="comp-delta-desc">Identical values: perfect harmonic unison.</div>
               <button id="btn-comp-play" class="btn-comp-play">
-                ▶ Listen to Binaural Beating
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+                Listen to Binaural Beating
               </button>
             </div>
 
             <!-- Era B (Right Ear) -->
             <div class="era-box era-right">
-              <div class="era-tag">RIGHT EAR 🎧 (ERA B COMPARISON)</div>
+              <div class="era-tag">RIGHT EAR: ERA B (COMPARISON)</div>
               <label for="comp-slider-b" class="era-label">Select Era B Date:</label>
               <input type="range" id="comp-slider-b" class="era-slider" min="0" max="100" value="10">
               <div class="era-readout">
@@ -437,16 +518,15 @@
         <div class="scanner-card">
           <div class="scanner-header">
             <div>
-              <h3>🔍 Aural Climate Anomaly Scanner & Outlier Diagnostics</h3>
+              <h3>Aural Climate Anomaly Scanner &amp; Outlier Diagnostics</h3>
               <p>
-                The human ear detects micro-temporal changes faster than the eye scanning charts. 
-                This tool automatically computes mean ($\mu$) and standard deviation ($\sigma$), 
-                screening for all observations exceeding the $2\sigma$ climate anomaly threshold.
+                Calculates the series mean (μ) and standard deviation (σ), screening for all observations exceeding the critical 2σ climate anomaly threshold.
               </p>
             </div>
             <div class="scanner-actions">
               <button id="btn-start-scanner" class="btn-scanner-start">
-                ▶ Run High-Speed Acoustic Sonar Scan
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/></svg>
+                Run Acoustic Sonar Scan
               </button>
             </div>
           </div>
@@ -454,7 +534,7 @@
           <!-- Statistical Summary Metrics -->
           <div class="scanner-stats-bar">
             <div class="stat-pill">
-              <span class="stat-k">TOTAL FRAMES</span>
+              <span class="stat-k">TOTAL OBSERVATIONS</span>
               <span class="stat-v" id="scan-total">—</span>
             </div>
             <div class="stat-pill">
@@ -466,7 +546,7 @@
               <span class="stat-v" id="scan-std">—</span>
             </div>
             <div class="stat-pill">
-              <span class="stat-k">ANOMALIES (&gt;2σ)</span>
+              <span class="stat-k">OUTLIERS (&gt;2σ)</span>
               <span class="stat-v" id="scan-anomalies-count" style="color:var(--red)">—</span>
             </div>
           </div>
@@ -484,26 +564,25 @@
                 </tr>
               </thead>
               <tbody id="anomaly-table-body">
-                <tr><td colspan="5" style="text-align:center;color:var(--muted)">Run scanner or load story to detect anomalies...</td></tr>
+                <tr><td colspan="5" style="text-align:center;color:var(--text-muted)">Run scanner or load story to detect anomalies...</td></tr>
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      <!-- ═══ TOOL 4: ACCESSIBLE EARTH LAB (BVI Screen-Reader Explorer) ═══ -->
+      <!-- ═══ TOOL 4: ACCESSIBLE EARTH LAB ═══ -->
       <div id="panel-accessibility" class="ws-panel" hidden aria-label="Accessible Earth Lab">
         <div class="bvi-card">
-          <h3>♿ Accessible Earth Science Laboratory (BVI Research Lab)</h3>
+          <h3>Accessible Earth Science Laboratory (BVI Research Lab)</h3>
           <p>
-            Designed for blind and low-vision scientists, students, and educators. 
-            Provides an acoustic pitch ruler, tactile sound scrubbing, and real-time verbalization of rate-of-change and climate velocity.
+            Acoustic pitch ruler, tactile audio scrubbing, and real-time verbalization of rate-of-change and climate velocity for blind and low-vision researchers.
           </p>
 
           <div class="bvi-grid">
             <!-- Verbalizer Box -->
             <div class="bvi-verbalizer" aria-live="polite">
-              <div class="bvi-title">AUDIO DESCRIPTIVE VERBALIZER</div>
+              <div class="bvi-title">Acoustic Descriptive Verbalizer</div>
               <p id="bvi-speech-text">Ready. Use Arrow keys to navigate or press Space to play.</p>
               <div class="bvi-metrics">
                 <span id="bvi-slope-metric">Rate of Change: —</span>
@@ -513,7 +592,7 @@
 
             <!-- Pitch Ruler -->
             <div class="bvi-ruler">
-              <div class="bvi-title">ACOUSTIC PITCH RULER (C3 → C6)</div>
+              <div class="bvi-title">Acoustic Pitch Ruler (C3 → C6)</div>
               <div class="ruler-buttons">
                 <button class="btn-ruler" data-note="48">C3 (Baseline Min)</button>
                 <button class="btn-ruler" data-note="55">G3 (Lower Tier)</button>
@@ -527,25 +606,32 @@
         </div>
       </div>
 
-      <!-- ═══ PLAYBACK CONTROLS BAR ═══ -->
+      <!-- ═══ PLAYBACK TRANSPORT CONTROLS BAR ═══ -->
       <div class="controls-bar" role="region" aria-label="Playback controls">
         <div class="controls-top">
           <div class="transport">
-            <button id="btn-prev" class="ctrl-btn" title="Step back (← Arrow)" aria-label="Step back one frame">⏮</button>
-            <button id="btn-play" class="ctrl-play" aria-label="Play" aria-pressed="false">
-              <span id="play-glyph">▶</span><span id="play-lbl">PLAY</span>
+            <button id="btn-prev" class="ctrl-btn" title="Step back (Left Arrow)" aria-label="Step back one frame">
+              <svg class="icon" viewBox="0 0 24 24"><polygon points="19 20 9 12 19 4 19 20" fill="currentColor"/><line x1="5" y1="5" x2="5" y2="19"/></svg>
             </button>
-            <button id="btn-next" class="ctrl-btn" title="Step forward (→ Arrow)" aria-label="Step forward one frame">⏭</button>
+            <button id="btn-play" class="ctrl-play" aria-label="Play" aria-pressed="false">
+              <span id="play-glyph">
+                <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor"/></svg>
+              </span>
+              <span id="play-lbl">PLAY</span>
+            </button>
+            <button id="btn-next" class="ctrl-btn" title="Step forward (Right Arrow)" aria-label="Step forward one frame">
+              <svg class="icon" viewBox="0 0 24 24"><polygon points="5 4 15 12 5 20 5 4" fill="currentColor"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+            </button>
           </div>
 
           <div class="ctrl-row-right">
             <label class="ctrl-mini-label" for="speed-sel">SPEED</label>
             <select id="speed-sel" class="ctrl-select" aria-label="Playback speed">
               <option value="0.5">0.5×</option>
-              <option value="1.0" selected>1×</option>
+              <option value="1.0" selected>1.0×</option>
               <option value="1.5">1.5×</option>
-              <option value="2.0">2×</option>
-              <option value="3.0">3×</option>
+              <option value="2.0">2.0×</option>
+              <option value="3.0">3.0×</option>
             </select>
             <label class="ctrl-mini-label" for="vol-rng">GAIN</label>
             <input type="range" id="vol-rng" class="ctrl-vol" min="-10" max="12" value="4" step="1" aria-label="Master Volume">
@@ -558,7 +644,9 @@
           <div class="tl-track" id="tl-track">
             <label for="scrubber" class="sr-only">Frame timeline scrubber</label>
             <input type="range" id="scrubber" class="scrubber-input" min="0" max="100" value="0" step="1">
-            <div class="tl-alert-pip" id="tl-pip" hidden aria-hidden="true">⚡</div>
+            <div class="tl-alert-pip" id="tl-pip" hidden aria-hidden="true">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="currentColor"/></svg>
+            </div>
           </div>
           <span class="tl-label" id="tl-end">—</span>
         </div>
@@ -567,10 +655,12 @@
         <div class="synaptics-touchpad-bar" id="synaptics-pad" role="region" aria-label="Synaptics Precision Touchpad and Gesture Zone" tabindex="0">
           <div class="synaptics-pad-inner">
             <div class="synaptics-left-desc">
-              <span class="synaptics-glance-icon">🎛️</span>
+              <div class="synaptics-glance-icon">
+                <svg class="icon" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="7" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="17" y2="12"/></svg>
+              </div>
               <div>
                 <strong class="synaptics-heading">SYNAPTICS PRECISION HAPTIC TOUCHPAD</strong>
-                <span class="synaptics-subtext">Swipe / drag horizontally across this trackpad to scrub frames with tactile haptic ticks. Two-finger tap or double-click to toggle Play/Pause.</span>
+                <span class="synaptics-subtext">Swipe horizontally across this surface to scrub frames with tactile haptic clicks. Double-click or two-finger tap to toggle Play/Pause.</span>
               </div>
             </div>
             <div class="synaptics-badge-wrap">
@@ -587,15 +677,15 @@
   <dialog id="report-modal" class="report-modal" aria-labelledby="modal-title">
     <div class="modal-inner">
       <div class="modal-header">
-        <h3 id="modal-title">📋 NASA Climate Sonification Diagnostics Report</h3>
+        <h3 id="modal-title">NASA Climate Sonification Diagnostics Report</h3>
         <button id="btn-close-modal" class="btn-close" aria-label="Close dialog">✕</button>
       </div>
       <div class="modal-body">
         <pre id="report-content" class="report-code"></pre>
       </div>
       <div class="modal-footer">
-        <button id="btn-copy-report" class="btn-modal-action">📋 Copy to Clipboard</button>
-        <button id="btn-download-report" class="btn-modal-action btn-modal-primary">💾 Download Report (.txt)</button>
+        <button id="btn-copy-report" class="btn-modal-action">Copy to Clipboard</button>
+        <button id="btn-download-report" class="btn-modal-action btn-modal-primary">Download Report (.txt)</button>
       </div>
     </div>
   </dialog>
@@ -604,60 +694,56 @@
   <dialog id="voice-modal" class="report-modal" aria-labelledby="voice-modal-title">
     <div class="modal-inner">
       <div class="modal-header">
-        <h3 id="voice-modal-title">🎤 Voice Commands &amp; 🎛️ Synaptics Gestures</h3>
+        <h3 id="voice-modal-title">Voice Commands &amp; Synaptics Touch Gestures</h3>
         <button id="btn-close-voice-modal" class="btn-close" aria-label="Close voice guide">✕</button>
       </div>
       <div class="modal-body">
         <div class="guide-grid">
           <div>
-            <h4 style="color:var(--cyan);margin-bottom:0.5rem">🎙️ Supported Voice Commands</h4>
+            <h4 style="color:var(--accent);margin-bottom:0.5rem;font-size:0.9rem">Supported Speech Commands</h4>
             <ul class="guide-list">
-              <li><strong>"Play" / "Resume" / "Start"</strong> — Begins sonification playback</li>
-              <li><strong>"Pause" / "Stop" / "Freeze"</strong> — Pauses playback</li>
-              <li><strong>"Next" / "Forward" / "Step"</strong> — Steps forward one frame</li>
-              <li><strong>"Back" / "Previous" / "Rewind"</strong> — Steps back one frame</li>
-              <li><strong>"Story 1" through "Story 5"</strong> — Instantly loads that dataset</li>
-              <li><strong>"Heat dome" / "Amazon" / "Australia"</strong> — Jumps to specific event</li>
-              <li><strong>"Explorer" / "Comparator" / "Scanner" / "Lab"</strong> — Switches tool</li>
-              <li><strong>"Scan" / "Start scan"</strong> — Runs automated anomaly sonar scan</li>
-              <li><strong>"Faster" / "Slower" / "Normal speed"</strong> — Adjusts tempo</li>
-              <li><strong>"Louder" / "Quieter"</strong> — Adjusts gain volume</li>
-              <li><strong>"Report" / "Export"</strong> — Opens science assessment report</li>
-              <li><strong>"Catalog" / "Home"</strong> — Returns to story catalog</li>
+              <li><strong>"GO" / "Play"</strong> — Starts sonification playback</li>
+              <li><strong>"STOP" / "Pause"</strong> — Freezes playback</li>
+              <li><strong>"RIGHT" / "Next"</strong> — Steps forward one frame</li>
+              <li><strong>"LEFT" / "Prev"</strong> — Steps backward one frame</li>
+              <li><strong>"ONE" through "FIVE"</strong> — Loads specific climate series</li>
+              <li><strong>"THREE"</strong> — Jumps to Pacific Northwest Heat Dome</li>
+              <li><strong>"YES"</strong> — Executes automated sonar anomaly scan</li>
+              <li><strong>"NO"</strong> — Returns to Mission Explorer</li>
+              <li><strong>"UP" / "DOWN"</strong> — Increases / decreases gain by 3 dB</li>
             </ul>
           </div>
           <div>
-            <h4 style="color:var(--green);margin-bottom:0.5rem">🎛️ Synaptics Touchpad &amp; Haptic Gestures</h4>
+            <h4 style="color:var(--green);margin-bottom:0.5rem;font-size:0.9rem">Synaptics Precision Touchpad</h4>
             <ul class="guide-list">
-              <li><strong>Horizontal Two-Finger Swipe:</strong> Smoothly scrubs frames forward and backward with physical haptic resistance.</li>
-              <li><strong>Touchpad Touch &amp; Drag:</strong> Drag across the Synaptics zone to glide across timeline frames with instant acoustic pitch response.</li>
-              <li><strong>Two-Finger Tap / Double Click:</strong> Instantly toggles Play and Pause.</li>
-              <li><strong>Haptic Click on Each Frame:</strong> 8 ms tactile pulse via Web Vibration API confirms frame boundary without looking.</li>
-              <li><strong>Anomaly Shockwave Burst:</strong> [40ms, 30ms, 80ms] distinct double-vibration pulse fires when passing an extreme threshold crossing!</li>
+              <li><strong>Horizontal Two-Finger Swipe:</strong> Scrubs frames smoothly with calibrated haptic resistance.</li>
+              <li><strong>Direct Touch Scrubbing:</strong> Drag across the touchpad zone to scrub frames with continuous pitch tracking.</li>
+              <li><strong>Double Tap / Click:</strong> Instantly toggles playback between Play and Pause.</li>
+              <li><strong>Frame Boundary Haptic Tick:</strong> 8 ms tactile pulse confirms frame boundary without looking.</li>
+              <li><strong>Anomaly Shockwave Burst:</strong> [40ms, 30ms, 80ms] double-vibration pulse fires upon crossing 2σ anomaly thresholds.</li>
             </ul>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button id="btn-dismiss-voice-modal" class="btn-modal-action btn-modal-primary">Got it, Let's Play!</button>
+        <button id="btn-dismiss-voice-modal" class="btn-modal-action btn-modal-primary">Close Guide</button>
       </div>
     </div>
   </dialog>
 
   <!-- ═══ FOOTER ═══ -->
   <footer class="app-footer" role="contentinfo">
-    <span>🌍 <strong>Earth Jukebox</strong> — Applied NASA Climate Sonification Workstation (Solo Build)</span>
-    <span>Datasets: NASA POWER · NASA GIBS · NASA VEDA</span>
-    <span>Imagery: NASA/GSFC/ESDIS (GIBS WMTS)</span>
+    <span><strong>Earth Jukebox</strong> — NASA Applied Climate Sonification Workstation</span>
+    <span>Data Sources: NASA POWER · NASA GIBS · NASA VEDA</span>
+    <span>Satellite Imagery: NASA/GSFC/ESDIS (GIBS WMTS)</span>
   </footer>
 
   <!-- Threshold flash overlay -->
   <div id="flash-overlay" class="flash-overlay" aria-hidden="true"></div>
 
-  <!-- CDN Dependencies -->
+  <!-- Dependencies -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
-  <!-- Local On-Device AI Speech Recognition Engine (Offline, Zero Cloud Dependency) -->
   <script src="assets/vendor/tf.min.js"></script>
   <script src="assets/vendor/speech-commands.min.js"></script>
   <script src="audio.js"></script>
