@@ -105,22 +105,45 @@
         </div>
       </div>
 
-      <!-- Quick-Action Voice Command Chips -->
+      <!-- Quick-Action Voice Command Chips with Spoken Words in Brackets -->
       <div class="voice-chips-row" role="group" aria-label="Quick voice command chips">
-        <span class="voice-chips-label">One-Click Voice Commands:</span>
-        <button class="voice-chip" data-cmd="play">🗣️ "Play"</button>
-        <button class="voice-chip" data-cmd="pause">🗣️ "Pause"</button>
-        <button class="voice-chip" data-cmd="next">🗣️ "Next Frame"</button>
-        <button class="voice-chip" data-cmd="story 1">🗣️ "Story 1 (Seasons)"</button>
-        <button class="voice-chip" data-cmd="story 2">🗣️ "Story 2 (Trend)"</button>
-        <button class="voice-chip" data-cmd="story 3">🗣️ "Story 3 (Heat Dome ⭐)"</button>
-        <button class="voice-chip" data-cmd="story 4">🗣️ "Story 4 (Amazon)"</button>
-        <button class="voice-chip" data-cmd="story 5">🗣️ "Story 5 (Australia)"</button>
-        <button class="voice-chip" data-cmd="faster">🗣️ "Faster"</button>
-        <button class="voice-chip" data-cmd="louder">🗣️ "Louder"</button>
-        <button class="voice-chip" data-cmd="scan">🗣️ "Run Scan"</button>
-        <button class="voice-chip" data-cmd="compare">🗣️ "Compare"</button>
-        <button class="voice-chip" data-cmd="report">🗣️ "Export Report"</button>
+        <span class="voice-chips-label">Quick Action [What to Speak]:</span>
+        <button class="voice-chip" data-cmd="stop">⏸️ Pause <span class="chip-bracket">[Say "STOP"]</span></button>
+        <button class="voice-chip" data-cmd="go">▶️ Play <span class="chip-bracket">[Say "GO"]</span></button>
+        <button class="voice-chip" data-cmd="three">⭐ Heat Dome <span class="chip-bracket">[Say "THREE"]</span></button>
+        <button class="voice-chip" data-cmd="up">🔊 Louder <span class="chip-bracket">[Say "UP"]</span></button>
+        <button class="voice-chip" data-cmd="down">🔉 Softer <span class="chip-bracket">[Say "DOWN"]</span></button>
+        <button class="voice-chip" data-cmd="right">⏭️ Next <span class="chip-bracket">[Say "RIGHT"]</span></button>
+        <button class="voice-chip" data-cmd="left">⏮️ Prev <span class="chip-bracket">[Say "LEFT"]</span></button>
+        <button class="voice-chip" data-cmd="one">🌱 Seasonal <span class="chip-bracket">[Say "ONE"]</span></button>
+        <button class="voice-chip" data-cmd="two">📈 Tokyo Trend <span class="chip-bracket">[Say "TWO"]</span></button>
+        <button class="voice-chip" data-cmd="four">🌧️ Amazon Rain <span class="chip-bracket">[Say "FOUR"]</span></button>
+        <button class="voice-chip" data-cmd="five">🔥 Australia <span class="chip-bracket">[Say "FIVE"]</span></button>
+        <button class="voice-chip" data-cmd="yes">📡 Sonar Scan <span class="chip-bracket">[Say "YES"]</span></button>
+        <button class="voice-chip" data-cmd="no">🗺️ Mission Map <span class="chip-bracket">[Say "NO"]</span></button>
+      </div>
+
+      <!-- Action & Spoken Word Direct Mapping Directory -->
+      <div class="voice-directory-box">
+        <div class="voice-directory-header">
+          <span>📖 ACTION &amp; SPOKEN WORD DIRECT MAPPING DIRECTORY:</span>
+          <span style="color:var(--muted)">Click mic button &amp; speak the exact yellow word in brackets</span>
+        </div>
+        <div class="voice-directory-grid">
+          <div class="voice-directory-item"><span class="v-act">⏸️ Pause Audio</span><span class="v-speak">[Say "STOP"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">▶️ Play Audio</span><span class="v-speak">[Say "GO"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">⭐ 2021 Heat Dome</span><span class="v-speak">[Say "THREE"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">🔊 Volume Up (+3dB)</span><span class="v-speak">[Say "UP"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">🔉 Volume Down (-3dB)</span><span class="v-speak">[Say "DOWN"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">⏭️ Step Forward</span><span class="v-speak">[Say "RIGHT"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">⏮️ Step Backward</span><span class="v-speak">[Say "LEFT"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">🌱 Seasonal Cycle</span><span class="v-speak">[Say "ONE"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">📈 Tokyo Warming</span><span class="v-speak">[Say "TWO"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">🌧️ Amazon Rainfall</span><span class="v-speak">[Say "FOUR"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">🔥 Australia Fires</span><span class="v-speak">[Say "FIVE"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">📡 Sonar Anomaly Scan</span><span class="v-speak">[Say "YES"]</span></div>
+          <div class="voice-directory-item"><span class="v-act">🗺️ Mission Explorer</span><span class="v-speak">[Say "NO"]</span></div>
+        </div>
       </div>
 
       <!-- Voice Command Text Input for typing commands -->

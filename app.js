@@ -257,6 +257,7 @@
 
   function renderCatalog() {
     storiesGrid.innerHTML = '';
+    const voiceWords = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
     stories.forEach((s, i) => {
       const card = document.createElement('article');
       card.className = 'story-card';
@@ -280,7 +281,7 @@
         </div>
         <div class="sc-footer">
           <span class="sc-synth">🎵 ${SYNTH_NAMES[s.id] || 'Synthesis'}</span>
-          <span class="sc-cta">LAUNCH WORKSTATION [${i+1}] →</span>
+          <span class="sc-cta">LAUNCH <small class="voice-badge-tag">[Say "${voiceWords[i]}"]</small> →</span>
         </div>`;
 
       const open = () => loadStory(s);
@@ -334,6 +335,7 @@
 
   // ─── Story Tabs Switcher ─────────────────────────────────────────────────
   function renderTabs(activeId) {
+    const voiceWords = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE'];
     storyTabs.innerHTML = '';
     stories.forEach((s, i) => {
       const btn = document.createElement('button');
@@ -341,7 +343,7 @@
       btn.setAttribute('role', 'tab');
       btn.setAttribute('aria-selected', s.id === activeId ? 'true' : 'false');
       btn.setAttribute('aria-label', `Switch to story: ${s.title}`);
-      btn.textContent = `${s.icon} ${i+1}. ${s.title.split(':')[0]}`;
+      btn.innerHTML = `${s.icon} ${i+1}. ${s.title.split(':')[0]} <span class="tab-voice-badge">[Say "${voiceWords[i]}"]</span>`;
       btn.addEventListener('click', () => loadStory(s));
       storyTabs.appendChild(btn);
     });
@@ -1572,7 +1574,7 @@ Earth Observation archives and is free for open educational and research use.
     }
 
     // 6. Workstation Tools
-    if (text.includes('explorer') || text.includes('map') || text.includes('mission')) {
+    if (text === 'no' || text.includes('explorer') || text.includes('map') || text.includes('mission')) {
       setWorkstationMode('explorer');
       return;
     }
@@ -1580,19 +1582,13 @@ Earth Observation archives and is free for open educational and research use.
       setWorkstationMode('comparator');
       return;
     }
-    if (text.includes('scan') || text.includes('scanner') || text.includes('anomaly') || text.includes('sonar')) {
+    if (text === 'yes' || text.includes('run scan') || text.includes('start scan') || text.includes('detect') || text.includes('acoustic scan') || text.includes('scan') || text.includes('sonar')) {
       setWorkstationMode('scanner');
+      runHighSpeedScanner();
       return;
     }
     if (text.includes('accessibility') || text.includes('accessible') || text.includes('lab') || text.includes('ruler') || text.includes('bvi')) {
       setWorkstationMode('accessibility');
-      return;
-    }
-
-    // 7. Run Sonar Scan
-    if (text.includes('run scan') || text.includes('start scan') || text.includes('detect') || text.includes('acoustic scan')) {
-      setWorkstationMode('scanner');
-      runHighSpeedScanner();
       return;
     }
 
@@ -1972,11 +1968,15 @@ Earth Observation archives and is free for open educational and research use.
     AudioEngine.onStateChange = (playing) => {
       btnPlay.setAttribute('aria-pressed', playing ? 'true' : 'false');
       if (playing) {
-        playGlyph.textContent = '⏸'; playLbl.textContent = 'PAUSE';
-        telDot.className = 'tel-dot active'; telStatus.textContent = 'PLAYING';
+        playGlyph.textContent = '⏸';
+        playLbl.innerHTML = 'PAUSE <small class="voice-badge-tag">[Say "STOP"]</small>';
+        telDot.className = 'tel-dot active';
+        telStatus.textContent = 'PLAYING';
       } else {
-        playGlyph.textContent = '▶'; playLbl.textContent = 'PLAY';
-        telDot.className = 'tel-dot'; telStatus.textContent = 'PAUSED';
+        playGlyph.textContent = '▶';
+        playLbl.innerHTML = 'PLAY <small class="voice-badge-tag">[Say "GO"]</small>';
+        telDot.className = 'tel-dot';
+        telStatus.textContent = 'PAUSED';
         if (curData && curMeta) {
           const f = curData.frames[AudioEngine.currentIndex];
           if (f) setGibsTile(f.date, curMeta.gibs_layer);
