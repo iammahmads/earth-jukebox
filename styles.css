@@ -313,25 +313,25 @@ body {
   background: var(--green-dim);
 }
 
-/* ── Voice & Touch Command Station (Drawer / Palette) ───────────────────── */
+/* ── Voice & Touch Command Station (Workstation Console Bar) ──────────────── */
 .voice-station {
   background: var(--bg-surface);
-  border-bottom: 1px solid var(--border);
-  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--space-3) var(--space-4);
   animation: slideDown var(--duration-fast) var(--ease-snappy);
 }
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
+  from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .voice-station[hidden] {
-  display: none;
+  display: none !important;
 }
 
 .voice-station-inner {
-  max-width: 1600px;
-  margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

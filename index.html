@@ -80,103 +80,6 @@
     </div>
   </nav>
 
-  <!-- ═══ LIVE VOICE COMMAND HUD & INTERACTIVE WORKSTATION BAR ═══ -->
-  <div id="voice-station" class="voice-station" hidden aria-live="assertive">
-    <div class="voice-station-inner">
-      <div class="voice-station-status-row">
-        <div class="voice-status-group">
-          <span class="voice-pulse-ring" id="voice-pulse-ring" aria-hidden="true"></span>
-          <span id="voice-station-icon">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-          </span>
-          <span class="voice-title" id="voice-station-title">Voice Command Station:</span>
-          <span id="voice-engine-badge" class="voice-engine-badge">Local Neural Engine</span>
-          <span id="voice-station-text">Ready. Click mic to speak or select a quick action below.</span>
-        </div>
-
-        <!-- Real-Time Microphone Hardware Audio Level (VU Meter) -->
-        <div class="voice-mic-telemetry" id="voice-mic-telemetry">
-          <span class="vu-label">MIC INPUT</span>
-          <div class="vu-meter-bar" title="Live audio feed from your microphone">
-            <div class="vu-meter-fill" id="vu-meter-fill" style="width: 0%;"></div>
-          </div>
-          <span class="vu-val" id="vu-meter-val">0% (Idle)</span>
-          <button id="btn-test-mic" class="btn-test-mic" title="Test & diagnose microphone audio input">Test Mic</button>
-        </div>
-
-        <button id="btn-close-voice-station" class="btn-voice-station-close" aria-label="Close voice station">
-          <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Minimize
-        </button>
-      </div>
-
-      <!-- Real-Time Speech Feed Display (YouTube-Style On-Demand Mic Button) -->
-      <div class="voice-live-feed-row" id="voice-live-feed-row">
-        <button id="btn-click-to-speak" class="btn-click-to-speak" aria-label="Click to speak command" title="Click to speak (like YouTube voice search)">
-          <span class="mic-pulse-circle" id="mic-pulse-circle" aria-hidden="true"></span>
-          <span id="ptt-icon">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-          </span>
-          <span id="ptt-text">Click to Speak</span>
-        </button>
-
-        <span class="feed-tag">TRANSCRIPT</span>
-        <div class="voice-live-transcript" id="voice-live-transcript" aria-live="polite">
-          <span class="transcript-placeholder" id="transcript-placeholder">Click mic and speak: "STOP" (Pause), "GO" (Play), "THREE" (Story 3), "UP" / "DOWN" (Volume), "YES" (Scan)</span>
-          <span class="transcript-interim" id="transcript-interim"></span>
-        </div>
-      </div>
-
-      <!-- Quick-Action Voice Command Chips with Spoken Words in Brackets -->
-      <div class="voice-chips-row" role="group" aria-label="Quick voice command chips">
-        <span class="voice-chips-label">Quick Actions:</span>
-        <button class="voice-chip" data-cmd="stop">Pause <span class="chip-bracket">[Say "STOP"]</span></button>
-        <button class="voice-chip" data-cmd="go">Play <span class="chip-bracket">[Say "GO"]</span></button>
-        <button class="voice-chip" data-cmd="three">Heat Dome <span class="chip-bracket">[Say "THREE"]</span></button>
-        <button class="voice-chip" data-cmd="up">Louder <span class="chip-bracket">[Say "UP"]</span></button>
-        <button class="voice-chip" data-cmd="down">Softer <span class="chip-bracket">[Say "DOWN"]</span></button>
-        <button class="voice-chip" data-cmd="right">Next <span class="chip-bracket">[Say "RIGHT"]</span></button>
-        <button class="voice-chip" data-cmd="left">Prev <span class="chip-bracket">[Say "LEFT"]</span></button>
-        <button class="voice-chip" data-cmd="one">Seasonal <span class="chip-bracket">[Say "ONE"]</span></button>
-        <button class="voice-chip" data-cmd="two">Tokyo Trend <span class="chip-bracket">[Say "TWO"]</span></button>
-        <button class="voice-chip" data-cmd="four">Amazon Rain <span class="chip-bracket">[Say "FOUR"]</span></button>
-        <button class="voice-chip" data-cmd="five">Australia <span class="chip-bracket">[Say "FIVE"]</span></button>
-        <button class="voice-chip" data-cmd="yes">Sonar Scan <span class="chip-bracket">[Say "YES"]</span></button>
-        <button class="voice-chip" data-cmd="no">Explorer <span class="chip-bracket">[Say "NO"]</span></button>
-      </div>
-
-      <!-- Action & Spoken Word Direct Mapping Directory -->
-      <div class="voice-directory-box">
-        <div class="voice-directory-header">
-          <span>COMMAND MAPPING DIRECTORY</span>
-          <span>Click mic button and speak the exact keyword</span>
-        </div>
-        <div class="voice-directory-grid">
-          <div class="voice-directory-item"><span class="v-act">Pause Audio</span><span class="v-speak">[STOP]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Play Audio</span><span class="v-speak">[GO]</span></div>
-          <div class="voice-directory-item"><span class="v-act">2021 Heat Dome</span><span class="v-speak">[THREE]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Volume Up (+3dB)</span><span class="v-speak">[UP]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Volume Down (-3dB)</span><span class="v-speak">[DOWN]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Step Forward</span><span class="v-speak">[RIGHT]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Step Backward</span><span class="v-speak">[LEFT]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Seasonal Cycle</span><span class="v-speak">[ONE]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Tokyo Warming</span><span class="v-speak">[TWO]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Amazon Rainfall</span><span class="v-speak">[FOUR]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Australia Fires</span><span class="v-speak">[FIVE]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Sonar Anomaly Scan</span><span class="v-speak">[YES]</span></div>
-          <div class="voice-directory-item"><span class="v-act">Mission Explorer</span><span class="v-speak">[NO]</span></div>
-        </div>
-      </div>
-
-      <!-- Voice Command Text Input for typing commands -->
-      <form id="voice-input-form" class="voice-input-form" onsubmit="return false;">
-        <label for="voice-text-input" class="sr-only">Type a voice command</label>
-        <input type="text" id="voice-text-input" class="voice-text-input" placeholder="Type command (e.g. 'play heat dome', 'faster', 'louder') and press Enter...">
-        <button type="submit" id="btn-voice-input-submit" class="btn-voice-input-submit">Execute</button>
-      </form>
-    </div>
-  </div>
-
   <!-- ═══ MAIN ═══ -->
   <main id="main">
 
@@ -367,6 +270,103 @@
       <!-- Story selector tabs (1 to 5) -->
       <div class="story-tabs" id="story-tabs" role="tablist" aria-label="Switch story">
         <!-- Injected by app.js -->
+      </div>
+
+      <!-- ═══ LIVE VOICE COMMAND HUD & INTERACTIVE WORKSTATION BAR ═══ -->
+      <div id="voice-station" class="voice-station" aria-live="assertive">
+        <div class="voice-station-inner">
+          <div class="voice-station-status-row">
+            <div class="voice-status-group">
+              <span class="voice-pulse-ring" id="voice-pulse-ring" aria-hidden="true"></span>
+              <span id="voice-station-icon">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+              </span>
+              <span class="voice-title" id="voice-station-title">Voice Command Station:</span>
+              <span id="voice-engine-badge" class="voice-engine-badge">Local Neural Engine</span>
+              <span id="voice-station-text">Ready. Click mic to speak or select a quick action below.</span>
+            </div>
+
+            <!-- Real-Time Microphone Hardware Audio Level (VU Meter) -->
+            <div class="voice-mic-telemetry" id="voice-mic-telemetry">
+              <span class="vu-label">MIC INPUT</span>
+              <div class="vu-meter-bar" title="Live audio feed from your microphone">
+                <div class="vu-meter-fill" id="vu-meter-fill" style="width: 0%;"></div>
+              </div>
+              <span class="vu-val" id="vu-meter-val">0% (Idle)</span>
+              <button id="btn-test-mic" class="btn-test-mic" title="Test & diagnose microphone audio input">Test Mic</button>
+            </div>
+
+            <button id="btn-close-voice-station" class="btn-voice-station-close" aria-label="Close voice station">
+              <svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Minimize
+            </button>
+          </div>
+
+          <!-- Real-Time Speech Feed Display (YouTube-Style On-Demand Mic Button) -->
+          <div class="voice-live-feed-row" id="voice-live-feed-row">
+            <button id="btn-click-to-speak" class="btn-click-to-speak" aria-label="Click to speak command" title="Click to speak (like YouTube voice search)">
+              <span class="mic-pulse-circle" id="mic-pulse-circle" aria-hidden="true"></span>
+              <span id="ptt-icon">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+              </span>
+              <span id="ptt-text">Click to Speak</span>
+            </button>
+
+            <span class="feed-tag">TRANSCRIPT</span>
+            <div class="voice-live-transcript" id="voice-live-transcript" aria-live="polite">
+              <span class="transcript-placeholder" id="transcript-placeholder">Click mic and speak: "STOP" (Pause), "GO" (Play), "THREE" (Story 3), "UP" / "DOWN" (Volume), "YES" (Scan)</span>
+              <span class="transcript-interim" id="transcript-interim"></span>
+            </div>
+          </div>
+
+          <!-- Quick-Action Voice Command Chips with Spoken Words in Brackets -->
+          <div class="voice-chips-row" role="group" aria-label="Quick voice command chips">
+            <span class="voice-chips-label">Quick Actions:</span>
+            <button class="voice-chip" data-cmd="stop">Pause <span class="chip-bracket">[Say "STOP"]</span></button>
+            <button class="voice-chip" data-cmd="go">Play <span class="chip-bracket">[Say "GO"]</span></button>
+            <button class="voice-chip" data-cmd="three">Heat Dome <span class="chip-bracket">[Say "THREE"]</span></button>
+            <button class="voice-chip" data-cmd="up">Louder <span class="chip-bracket">[Say "UP"]</span></button>
+            <button class="voice-chip" data-cmd="down">Softer <span class="chip-bracket">[Say "DOWN"]</span></button>
+            <button class="voice-chip" data-cmd="right">Next <span class="chip-bracket">[Say "RIGHT"]</span></button>
+            <button class="voice-chip" data-cmd="left">Prev <span class="chip-bracket">[Say "LEFT"]</span></button>
+            <button class="voice-chip" data-cmd="one">Seasonal <span class="chip-bracket">[Say "ONE"]</span></button>
+            <button class="voice-chip" data-cmd="two">Tokyo Trend <span class="chip-bracket">[Say "TWO"]</span></button>
+            <button class="voice-chip" data-cmd="four">Amazon Rain <span class="chip-bracket">[Say "FOUR"]</span></button>
+            <button class="voice-chip" data-cmd="five">Australia <span class="chip-bracket">[Say "FIVE"]</span></button>
+            <button class="voice-chip" data-cmd="yes">Sonar Scan <span class="chip-bracket">[Say "YES"]</span></button>
+            <button class="voice-chip" data-cmd="no">Explorer <span class="chip-bracket">[Say "NO"]</span></button>
+          </div>
+
+          <!-- Action & Spoken Word Direct Mapping Directory -->
+          <details class="voice-directory-box">
+            <summary class="voice-directory-header">
+              <span>COMMAND MAPPING DIRECTORY (13 ACTIONS)</span>
+              <span style="color:var(--text-dim);font-size:0.7rem">Click to view all 13 voice mappings</span>
+            </summary>
+            <div class="voice-directory-grid" style="margin-top:var(--space-2)">
+              <div class="voice-directory-item"><span class="v-act">Pause Audio</span><span class="v-speak">[STOP]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Play Audio</span><span class="v-speak">[GO]</span></div>
+              <div class="voice-directory-item"><span class="v-act">2021 Heat Dome</span><span class="v-speak">[THREE]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Volume Up (+3dB)</span><span class="v-speak">[UP]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Volume Down (-3dB)</span><span class="v-speak">[DOWN]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Step Forward</span><span class="v-speak">[RIGHT]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Step Backward</span><span class="v-speak">[LEFT]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Seasonal Cycle</span><span class="v-speak">[ONE]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Tokyo Warming</span><span class="v-speak">[TWO]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Amazon Rainfall</span><span class="v-speak">[FOUR]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Australia Fires</span><span class="v-speak">[FIVE]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Sonar Anomaly Scan</span><span class="v-speak">[YES]</span></div>
+              <div class="voice-directory-item"><span class="v-act">Mission Explorer</span><span class="v-speak">[NO]</span></div>
+            </div>
+          </details>
+
+          <!-- Voice Command Text Input for typing commands -->
+          <form id="voice-input-form" class="voice-input-form" onsubmit="return false;">
+            <label for="voice-text-input" class="sr-only">Type a voice command</label>
+            <input type="text" id="voice-text-input" class="voice-text-input" placeholder="Type command (e.g. 'play heat dome', 'faster', 'louder') and press Enter...">
+            <button type="submit" id="btn-voice-input-submit" class="btn-voice-input-submit">Execute</button>
+          </form>
+        </div>
       </div>
 
       <!-- WORKSTATION TOOL PANELS -->

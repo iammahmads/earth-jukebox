@@ -305,6 +305,7 @@
         const mode = tab.dataset.mode;
         if (mode === 'voice') {
           openVoiceStation(true);
+          voiceStation?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           return;
         }
         setWorkstationMode(mode);
@@ -375,7 +376,16 @@
     landingView.hidden = true;
     playerView.hidden  = false;
     if (hero_RAF) { cancelAnimationFrame(hero_RAF); hero_RAF = null; }
-    window.scrollTo({top:0, behavior:'smooth'});
+
+    // Make sure voice station is open and directly in view with the story
+    openVoiceStation(true);
+
+    // Scroll smoothly to player workstation so the story & voice controls are directly in view
+    requestAnimationFrame(() => {
+      const navHeight = document.querySelector('.topnav')?.offsetHeight || 56;
+      const targetY = playerView.getBoundingClientRect().top + window.scrollY - navHeight - 8;
+      window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    });
 
     renderTabs(meta.id);
 
@@ -1773,8 +1783,12 @@ Earth Observation archives and is free for open educational and research use.
     // Toggle / Speak button in header
     if (btnVoiceToggle) {
       btnVoiceToggle.addEventListener('click', () => {
+        if (playerView && playerView.hidden && stories.length > 0) {
+          loadStory(curMeta || stories[0]);
+          return;
+        }
         if (voiceStation && voiceStation.hidden) {
-          openVoiceStation();
+          openVoiceStation(true);
           triggerClickToSpeak();
         } else {
           if (clickToSpeakActive) {
