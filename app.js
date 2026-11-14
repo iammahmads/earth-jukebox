@@ -77,6 +77,11 @@
   const voiceInputForm    = $('voice-input-form');
   const voiceTextInput    = $('voice-text-input');
   const tabModeVoice      = $('tab-mode-voice');
+  const vuMeterFill       = $('vu-meter-fill');
+  const vuMeterVal        = $('vu-meter-val');
+  const btnTestMic        = $('btn-test-mic');
+  const transcriptPlaceholder = $('transcript-placeholder');
+  const transcriptInterim = $('transcript-interim');
 
   // Telemetry Strip
   const telDot    = $('tel-dot');
@@ -992,6 +997,152 @@ Earth Observation archives and is free for open educational and research use.
     } catch (_) {}
   }
 
+  // ─── MICROPHONE HARDWARE TELEMETRY & VU METER ────────────────────────────
+  let micStream       = null;
+  let micAudioContext = null;
+  let micAnalyser     = null;
+  let micSource       = null;
+  let micAnimId       = null;
+
+  async function startMicVisualizer() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (vuMeterVal) {
+          vuMeterVal.textContent = 'API not supported';
+          vuMeterVal.style.color = 'var(--yellow)';
+        }
+        return;
+      }
+      if (!micStream) {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      }
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!micAudioContext) {
+        micAudioContext = new AudioCtx();
+      }
+      if (micAudioContext.state === 'suspended') {
+        await micAudioContext.resume();
+      }
+      if (!micAnalyser) {
+        micAnalyser = micAudioContext.createAnalyser();
+        micAnalyser.fftSize = 256;
+        micAnalyser.smoothingTimeConstant = 0.25;
+        micSource = micAudioContext.createMediaStreamSource(micStream);
+        micSource.connect(micAnalyser);
+      }
+
+      const dataArray = new Uint8Array(micAnalyser.frequencyBinCount);
+
+      function monitorAudioLevel() {
+        if (voiceStation && voiceStation.hidden && !isListening) {
+          if (micAnimId) cancelAnimationFrame(micAnimId);
+          micAnimId = null;
+          return;
+        }
+        micAnalyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        let peak = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+          if (dataArray[i] > peak) peak = dataArray[i];
+        }
+        const avg = sum / dataArray.length;
+        const pct = Math.min(100, Math.round((Math.max(avg * 1.5, peak * 0.7) / 128) * 100));
+
+        if (vuMeterFill) {
+          vuMeterFill.style.width = pct + '%';
+          if (pct > 60) {
+            vuMeterFill.style.background = 'var(--red)';
+          } else if (pct > 15) {
+            vuMeterFill.style.background = 'var(--green)';
+          } else {
+            vuMeterFill.style.background = 'var(--cyan)';
+          }
+        }
+
+        if (vuMeterVal) {
+          if (pct < 3) {
+            vuMeterVal.textContent = '0% (Silent)';
+            vuMeterVal.style.color = 'var(--muted)';
+          } else {
+            vuMeterVal.textContent = `${pct}% (Voice Detected!)`;
+            vuMeterVal.style.color = pct > 20 ? 'var(--green)' : 'var(--cyan)';
+          }
+        }
+
+        micAnimId = requestAnimationFrame(monitorAudioLevel);
+      }
+
+      if (!micAnimId) {
+        micAnimId = requestAnimationFrame(monitorAudioLevel);
+      }
+    } catch (err) {
+      console.warn('Microphone hardware stream access error:', err);
+      if (vuMeterVal) {
+        vuMeterVal.textContent = 'Mic Blocked (Check Permissions)';
+        vuMeterVal.style.color = 'var(--yellow)';
+      }
+    }
+  }
+
+  function stopMicVisualizer() {
+    if (micAnimId) {
+      cancelAnimationFrame(micAnimId);
+      micAnimId = null;
+    }
+    if (micStream) {
+      micStream.getTracks().forEach(t => t.stop());
+      micStream = null;
+    }
+    if (micAudioContext) {
+      try { micAudioContext.close(); } catch (_) {}
+      micAudioContext = null;
+      micAnalyser = null;
+      micSource = null;
+    }
+    if (vuMeterFill) vuMeterFill.style.width = '0%';
+    if (vuMeterVal) {
+      vuMeterVal.textContent = '0% (Offline)';
+      vuMeterVal.style.color = 'var(--muted)';
+    }
+  }
+
+  async function runMicDiagnosticTest() {
+    if (vuMeterVal) vuMeterVal.textContent = 'Testing Mic...';
+    try {
+      await startMicVisualizer();
+      if (!micStream) {
+        updateVoiceStationStatus('⚠️ Microphone access was not granted. Please allow microphone access in browser address bar.', 'alert');
+        return;
+      }
+      const audioTrack = micStream.getAudioTracks()[0];
+      const micName = audioTrack ? (audioTrack.label || 'Default Microphone') : 'Microphone';
+      updateVoiceStationStatus(`🎙️ Testing "${micName}" — Speak into your mic right now!`, 'live');
+
+      let maxPeak = 0;
+      const testInterval = setInterval(() => {
+        if (!micAnalyser) return;
+        const testData = new Uint8Array(micAnalyser.frequencyBinCount);
+        micAnalyser.getByteFrequencyData(testData);
+        for (let i = 0; i < testData.length; i++) {
+          if (testData[i] > maxPeak) maxPeak = testData[i];
+        }
+      }, 50);
+
+      setTimeout(() => {
+        clearInterval(testInterval);
+        const peakPct = Math.round((maxPeak / 255) * 100);
+        if (peakPct > 8) {
+          updateVoiceStationStatus(`✅ Microphone is receiving audio loud & clear! Peak signal: ${peakPct}%. Device: "${micName}"`, 'success');
+        } else {
+          updateVoiceStationStatus(`⚠️ Signal was 0%. Your microphone may be hardware muted or muted in OS sound settings. Device: "${micName}"`, 'alert');
+        }
+      }, 3000);
+    } catch (err) {
+      updateVoiceStationStatus(`⚠️ Mic test error: ${err.message}. Check browser mic permissions.`, 'alert');
+    }
+  }
+
   function updateVoiceStationStatus(text, statusType = 'info') {
     if (!voiceStation) return;
     clearTimeout(voiceToastTimer);
@@ -1034,7 +1185,7 @@ Earth Observation archives and is free for open educational and research use.
           voiceStationText.style.color = 'var(--muted2)';
         }
       }
-    }, 4000);
+    }, 4500);
   }
 
   function showVoiceToast(text, isAlert = false) {
@@ -1050,6 +1201,9 @@ Earth Observation archives and is free for open educational and research use.
         btnVoiceToggle.setAttribute('aria-pressed', 'true');
       }
       if (voiceBtnLabel) voiceBtnLabel.textContent = isListening ? 'Voice Control: ACTIVE' : 'Voice: ACTIVE';
+
+      // Start hardware audio VU meter
+      startMicVisualizer();
 
       if (speechRecognition && !isListening) {
         try {
@@ -1073,6 +1227,7 @@ Earth Observation archives and is free for open educational and research use.
       isListening = false;
       try { speechRecognition.stop(); } catch (_) {}
     }
+    stopMicVisualizer();
     if (btnVoiceToggle) {
       btnVoiceToggle.classList.remove('active', 'listening');
       btnVoiceToggle.setAttribute('aria-pressed', 'false');
@@ -1083,23 +1238,27 @@ Earth Observation archives and is free for open educational and research use.
 
   function executeVoiceCommand(rawTranscript) {
     const text = rawTranscript.toLowerCase().trim();
+    if (transcriptPlaceholder) transcriptPlaceholder.style.display = 'none';
+    if (transcriptInterim) {
+      transcriptInterim.innerHTML = `<span class="heard-tag">Executed:</span> <span class="heard-words">"${text}"</span>`;
+    }
     updateVoiceStationStatus(`🗣️ Executing: "${text}"`, 'success');
     triggerHaptic(20);
 
     // 1. Play / Start
-    if (text.includes('play') || text.includes('start') || text.includes('resume')) {
+    if (text.includes('play') || text.includes('start') || text.includes('resume') || text.includes('begin') || text.includes('go')) {
       AudioEngine.play();
       return;
     }
 
     // 2. Pause / Stop
-    if (text.includes('pause') || text.includes('stop') || text.includes('freeze') || text.includes('halt')) {
+    if (text.includes('pause') || text.includes('stop') || text.includes('freeze') || text.includes('halt') || text.includes('wait')) {
       AudioEngine.pause();
       return;
     }
 
     // 3. Next / Forward
-    if (text.includes('next') || text.includes('forward') || text.includes('advance')) {
+    if (text.includes('next') || text.includes('forward') || text.includes('advance') || text.includes('skip')) {
       AudioEngine.pause();
       AudioEngine.seek(AudioEngine.currentIndex + 1);
       return;
@@ -1113,23 +1272,23 @@ Earth Observation archives and is free for open educational and research use.
     }
 
     // 5. Stories 1 - 5
-    if (text.includes('story 1') || text.includes('story one') || text.includes('seasons') || text.includes('season') || text.includes('mediterranean')) {
+    if (text.includes('story 1') || text.includes('story one') || text.includes('first story') || text.includes('seasons') || text.includes('season') || text.includes('mediterranean')) {
       if (stories[0]) loadStory(stories[0]);
       return;
     }
-    if (text.includes('story 2') || text.includes('story two') || text.includes('trend') || text.includes('tokyo') || text.includes('drift')) {
+    if (text.includes('story 2') || text.includes('story two') || text.includes('second story') || text.includes('trend') || text.includes('tokyo') || text.includes('warming')) {
       if (stories[1]) loadStory(stories[1]);
       return;
     }
-    if (text.includes('story 3') || text.includes('story three') || text.includes('heat dome') || text.includes('heat') || text.includes('canada')) {
+    if (text.includes('story 3') || text.includes('story three') || text.includes('third story') || text.includes('heat dome') || text.includes('heat') || text.includes('dome') || text.includes('canada') || text.includes('pacific')) {
       if (stories[2]) loadStory(stories[2]);
       return;
     }
-    if (text.includes('story 4') || text.includes('story four') || text.includes('amazon') || text.includes('rain') || text.includes('rainfall')) {
+    if (text.includes('story 4') || text.includes('story four') || text.includes('fourth story') || text.includes('amazon') || text.includes('rain') || text.includes('rainfall') || text.includes('precipitation')) {
       if (stories[3]) loadStory(stories[3]);
       return;
     }
-    if (text.includes('story 5') || text.includes('story five') || text.includes('australia') || text.includes('bushfire') || text.includes('wildfire') || text.includes('black summer')) {
+    if (text.includes('story 5') || text.includes('story five') || text.includes('fifth story') || text.includes('australia') || text.includes('bushfire') || text.includes('wildfire') || text.includes('black summer') || text.includes('fire')) {
       if (stories[4]) loadStory(stories[4]);
       return;
     }
@@ -1139,28 +1298,28 @@ Earth Observation archives and is free for open educational and research use.
       setWorkstationMode('explorer');
       return;
     }
-    if (text.includes('compare') || text.includes('comparator') || text.includes('beating') || text.includes('divergence')) {
+    if (text.includes('compare') || text.includes('comparator') || text.includes('binaural') || text.includes('divergence') || text.includes('ears')) {
       setWorkstationMode('comparator');
       return;
     }
-    if (text.includes('scan') || text.includes('scanner') || text.includes('anomaly')) {
+    if (text.includes('scan') || text.includes('scanner') || text.includes('anomaly') || text.includes('sonar')) {
       setWorkstationMode('scanner');
       return;
     }
-    if (text.includes('accessibility') || text.includes('accessible') || text.includes('lab') || text.includes('ruler')) {
+    if (text.includes('accessibility') || text.includes('accessible') || text.includes('lab') || text.includes('ruler') || text.includes('bvi')) {
       setWorkstationMode('accessibility');
       return;
     }
 
     // 7. Run Sonar Scan
-    if (text.includes('run scan') || text.includes('start scan') || text.includes('detect')) {
+    if (text.includes('run scan') || text.includes('start scan') || text.includes('detect') || text.includes('acoustic scan')) {
       setWorkstationMode('scanner');
       runHighSpeedScanner();
       return;
     }
 
     // 8. Speed
-    if (text.includes('faster') || text.includes('speed up') || text.includes('double speed')) {
+    if (text.includes('faster') || text.includes('speed up') || text.includes('double speed') || text.includes('quick')) {
       speedSel.value = '2.0';
       AudioEngine.setRate(2.0);
       return;
@@ -1177,19 +1336,19 @@ Earth Observation archives and is free for open educational and research use.
     }
 
     // 9. Volume
-    if (text.includes('louder') || text.includes('volume up') || text.includes('boost')) {
+    if (text.includes('louder') || text.includes('volume up') || text.includes('boost') || text.includes('turn up') || text.includes('more sound')) {
       volRng.value = Math.min(12, parseInt(volRng.value, 10) + 3);
       AudioEngine.setVolume(parseFloat(volRng.value));
       return;
     }
-    if (text.includes('quieter') || text.includes('volume down') || text.includes('softer')) {
+    if (text.includes('quieter') || text.includes('volume down') || text.includes('softer') || text.includes('turn down') || text.includes('less sound')) {
       volRng.value = Math.max(-10, parseInt(volRng.value, 10) - 3);
       AudioEngine.setVolume(parseFloat(volRng.value));
       return;
     }
 
     // 10. Report & Catalog
-    if (text.includes('report') || text.includes('export') || text.includes('diagnostics')) {
+    if (text.includes('report') || text.includes('export') || text.includes('diagnostics') || text.includes('download report')) {
       openReportModal();
       return;
     }
@@ -1215,7 +1374,7 @@ Earth Observation archives and is free for open educational and research use.
       try {
         speechRecognition = new SpeechRec();
         speechRecognition.continuous = true;
-        speechRecognition.interimResults = false;
+        speechRecognition.interimResults = true; // Enable real-time interim recognition
         speechRecognition.lang = 'en-US';
 
         speechRecognition.onstart = () => {
@@ -1226,13 +1385,51 @@ Earth Observation archives and is free for open educational and research use.
           }
           if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice Control: ACTIVE';
           if (micIcon) micIcon.textContent = '🔴';
-          updateVoiceStationStatus('🔴 Microphone live: Listening for voice commands (or click any chip below)...', 'live');
+          updateVoiceStationStatus('🔴 Microphone live: Listening for speech (speak now or click any chip below)...', 'live');
+          if (transcriptPlaceholder) {
+            transcriptPlaceholder.style.display = 'inline';
+            transcriptPlaceholder.textContent = 'Listening... Speak words like "Play", "Story 3", "Faster", "Louder"';
+          }
+          if (transcriptInterim) transcriptInterim.innerHTML = '';
+        };
+
+        speechRecognition.onaudiostart = () => {
+          if (transcriptPlaceholder) transcriptPlaceholder.textContent = '🎙️ Audio signal detected! Listening for words...';
+        };
+
+        speechRecognition.onsoundstart = () => {
+          if (transcriptPlaceholder) transcriptPlaceholder.textContent = 'Sound incoming...';
+        };
+
+        speechRecognition.onspeechstart = () => {
+          if (transcriptPlaceholder) transcriptPlaceholder.textContent = 'Voice detected! Converting speech to text...';
         };
 
         speechRecognition.onresult = (e) => {
-          const lastIdx = e.results.length - 1;
-          const transcript = e.results[lastIdx][0].transcript;
-          executeVoiceCommand(transcript);
+          let interimText = '';
+          let finalCommand = '';
+
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            const transcript = e.results[i][0].transcript;
+            if (e.results[i].isFinal) {
+              finalCommand += transcript;
+            } else {
+              interimText += transcript;
+            }
+          }
+
+          // Live visual feedback: user sees their voice being fed in real-time!
+          if (transcriptInterim) {
+            if (interimText) {
+              if (transcriptPlaceholder) transcriptPlaceholder.style.display = 'none';
+              transcriptInterim.innerHTML = `<span class="hearing-tag">Hearing:</span> <span class="hearing-words">"${interimText}"</span>`;
+            }
+          }
+
+          if (finalCommand) {
+            const trimmed = finalCommand.trim();
+            executeVoiceCommand(trimmed);
+          }
         };
 
         speechRecognition.onerror = (e) => {
@@ -1248,8 +1445,9 @@ Earth Observation archives and is free for open educational and research use.
             if (micIcon) micIcon.textContent = '🎤';
             updateVoiceStationStatus('ℹ️ Microphone blocked or requires HTTP. Voice Station is ready! Click any command chip below or type a command:', 'alert');
           } else if (e.error === 'no-speech') {
-            if (isListening) {
-              updateVoiceStationStatus('🔴 Microphone live: Speak any command into mic or click chips below...', 'live');
+            if (isListening && transcriptPlaceholder) {
+              transcriptPlaceholder.style.display = 'inline';
+              transcriptPlaceholder.textContent = 'Listening... (No speech detected yet. Speak clearly into your mic)';
             }
           }
         };
@@ -1275,6 +1473,13 @@ Earth Observation archives and is free for open educational and research use.
     if (btnVoiceToggle) {
       btnVoiceToggle.addEventListener('click', () => {
         openVoiceStation();
+      });
+    }
+
+    // Test Mic Diagnostic Button
+    if (btnTestMic) {
+      btnTestMic.addEventListener('click', () => {
+        runMicDiagnosticTest();
       });
     }
 

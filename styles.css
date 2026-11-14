@@ -1146,3 +1146,115 @@ h1 { font-size: clamp(1.6rem, 3.5vw, 2.6rem); font-weight: 800; line-height: 1.1
   border-color: var(--cyan-d) !important;
   color: var(--cyan) !important;
 }
+
+/* ── MICROPHONE FEED VU METER & LIVE SPEECH TRANSCRIPT ────────────────── */
+.voice-mic-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+}
+.vu-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.vu-meter-bar {
+  width: 90px;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 212, 255, 0.3);
+}
+.vu-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--cyan);
+  transition: width 0.06s ease-out, background-color 0.1s ease;
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+}
+.vu-val {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--muted2);
+  white-space: nowrap;
+  min-width: 95px;
+}
+.btn-test-mic {
+  background: rgba(0, 212, 255, 0.12);
+  border: 1px solid var(--cyan-d);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.btn-test-mic:hover {
+  background: var(--cyan);
+  color: #000;
+}
+
+/* Live Speech Transcript Box */
+.voice-live-feed-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(2, 6, 14, 0.8);
+  border: 1px dashed var(--border-b);
+  border-radius: var(--r-sm);
+  padding: 0.35rem 0.75rem;
+}
+.feed-tag {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--yellow);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+.voice-live-transcript {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  min-height: 1.2rem;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.transcript-placeholder {
+  color: var(--muted);
+  font-style: italic;
+}
+.transcript-interim {
+  font-weight: 600;
+}
+.hearing-tag {
+  color: var(--yellow);
+  margin-right: 0.3rem;
+  font-size: 0.7rem;
+}
+.hearing-words {
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+.heard-tag {
+  color: var(--green);
+  margin-right: 0.3rem;
+  font-size: 0.7rem;
+}
+.heard-words {
+  color: var(--cyan);
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+}
