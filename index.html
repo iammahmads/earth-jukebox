@@ -47,11 +47,30 @@
       </div>
 
       <div class="nav-badges">
+        <button id="btn-voice-toggle" class="nav-interactive-btn" aria-label="Toggle voice control mode" aria-pressed="false" title="Click to speak voice commands (Play, Pause, Story 1-5, etc.)">
+          <span class="mic-icon" id="mic-icon">🎤</span>
+          <span id="voice-btn-label">Voice Control: OFF</span>
+        </button>
+        <button id="btn-synaptics-toggle" class="nav-interactive-btn active" aria-label="Toggle Synaptics touch and haptics" aria-pressed="true" title="Synaptics gesture & haptic feedback enabled">
+          <span class="haptic-icon">🎛️</span>
+          <span id="synaptics-btn-label">Synaptics: ACTIVE</span>
+        </button>
+        <button id="btn-voice-guide" class="nav-help-btn" aria-label="Voice command list" title="View voice commands and Synaptics gestures">
+          ❓ Voice &amp; Touch
+        </button>
         <span class="pill pill-nasa">NASA SPACE APPS 2026</span>
         <span class="pill pill-live" id="pill-live" hidden>◉ LIVE RUN</span>
       </div>
     </div>
   </nav>
+
+  <!-- ═══ LIVE VOICE COMMAND HUD TOAST ═══ -->
+  <div id="voice-hud" class="voice-hud" hidden aria-live="assertive">
+    <span class="voice-pulse-ring"></span>
+    <span id="voice-hud-icon">🎤</span>
+    <span class="voice-hud-title">VOICE CONTROL:</span>
+    <span id="voice-hud-text">Listening for command (e.g. "Play", "Story 3", "Faster")...</span>
+  </div>
 
   <!-- ═══ MAIN ═══ -->
   <main id="main">
@@ -457,6 +476,22 @@
           </div>
           <span class="tl-label" id="tl-end">—</span>
         </div>
+
+        <!-- Synaptics Precision Haptic Gesture Touchpad Zone -->
+        <div class="synaptics-touchpad-bar" id="synaptics-pad" role="region" aria-label="Synaptics Precision Touchpad and Gesture Zone" tabindex="0">
+          <div class="synaptics-pad-inner">
+            <div class="synaptics-left-desc">
+              <span class="synaptics-glance-icon">🎛️</span>
+              <div>
+                <strong class="synaptics-heading">SYNAPTICS PRECISION HAPTIC TOUCHPAD</strong>
+                <span class="synaptics-subtext">Swipe / drag horizontally across this trackpad to scrub frames with tactile haptic ticks. Two-finger tap or double-click to toggle Play/Pause.</span>
+              </div>
+            </div>
+            <div class="synaptics-badge-wrap">
+              <span class="synaptics-gesture-indicator" id="synaptics-gesture-ind">READY</span>
+            </div>
+          </div>
+        </div>
       </div>
 
     </section>
@@ -475,6 +510,50 @@
       <div class="modal-footer">
         <button id="btn-copy-report" class="btn-modal-action">📋 Copy to Clipboard</button>
         <button id="btn-download-report" class="btn-modal-action btn-modal-primary">💾 Download Report (.txt)</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ═══ VOICE & SYNAPTICS COMMAND GUIDE MODAL ═══ -->
+  <dialog id="voice-modal" class="report-modal" aria-labelledby="voice-modal-title">
+    <div class="modal-inner">
+      <div class="modal-header">
+        <h3 id="voice-modal-title">🎤 Voice Commands &amp; 🎛️ Synaptics Gestures</h3>
+        <button id="btn-close-voice-modal" class="btn-close" aria-label="Close voice guide">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="guide-grid">
+          <div>
+            <h4 style="color:var(--cyan);margin-bottom:0.5rem">🎙️ Supported Voice Commands</h4>
+            <ul class="guide-list">
+              <li><strong>"Play" / "Resume" / "Start"</strong> — Begins sonification playback</li>
+              <li><strong>"Pause" / "Stop" / "Freeze"</strong> — Pauses playback</li>
+              <li><strong>"Next" / "Forward" / "Step"</strong> — Steps forward one frame</li>
+              <li><strong>"Back" / "Previous" / "Rewind"</strong> — Steps back one frame</li>
+              <li><strong>"Story 1" through "Story 5"</strong> — Instantly loads that dataset</li>
+              <li><strong>"Heat dome" / "Amazon" / "Australia"</strong> — Jumps to specific event</li>
+              <li><strong>"Explorer" / "Comparator" / "Scanner" / "Lab"</strong> — Switches tool</li>
+              <li><strong>"Scan" / "Start scan"</strong> — Runs automated anomaly sonar scan</li>
+              <li><strong>"Faster" / "Slower" / "Normal speed"</strong> — Adjusts tempo</li>
+              <li><strong>"Louder" / "Quieter"</strong> — Adjusts gain volume</li>
+              <li><strong>"Report" / "Export"</strong> — Opens science assessment report</li>
+              <li><strong>"Catalog" / "Home"</strong> — Returns to story catalog</li>
+            </ul>
+          </div>
+          <div>
+            <h4 style="color:var(--green);margin-bottom:0.5rem">🎛️ Synaptics Touchpad &amp; Haptic Gestures</h4>
+            <ul class="guide-list">
+              <li><strong>Horizontal Two-Finger Swipe:</strong> Smoothly scrubs frames forward and backward with physical haptic resistance.</li>
+              <li><strong>Touchpad Touch &amp; Drag:</strong> Drag across the Synaptics zone to glide across timeline frames with instant acoustic pitch response.</li>
+              <li><strong>Two-Finger Tap / Double Click:</strong> Instantly toggles Play and Pause.</li>
+              <li><strong>Haptic Click on Each Frame:</strong> 8 ms tactile pulse via Web Vibration API confirms frame boundary without looking.</li>
+              <li><strong>Anomaly Shockwave Burst:</strong> [40ms, 30ms, 80ms] distinct double-vibration pulse fires when passing an extreme threshold crossing!</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-dismiss-voice-modal" class="btn-modal-action btn-modal-primary">Got it, Let's Play!</button>
       </div>
     </div>
   </dialog>

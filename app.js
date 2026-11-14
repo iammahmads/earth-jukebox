@@ -1,15 +1,15 @@
 /**
- * Earth Jukebox — Applied Scientific Workstation Controller v4 (app.js)
+ * Earth Jukebox — Applied Scientific Workstation Controller v5 (app.js)
  * NASA Space Apps 2026
  *
- * Implements 4 Real-World Workstation Modes:
- *   1. 🎯 Mission Explorer: Leaflet Map + Instant Canvas Viz + 60fps Oscilloscope
- *   2. ⚖️ Binaural Era Comparator: Left Ear (Baseline) vs Right Ear (Current Anomaly)
- *   3. 🔍 Aural Anomaly Scanner: Automated statistical outlier screening (>2σ) & diagnostics
- *   4. ♿ Accessible Earth Lab: BVI acoustic ruler, plain-language verbalizer & telemetry
- * Plus:
- *   - NASA-style Scientific Diagnostics Report Exporter (.txt / clipboard)
- *   - Smart GIBS satellite tile preloading and debouncing
+ * Implements:
+ *   1. 🎤 Hands-Free Voice Control (Web Speech API)
+ *   2. 🎛️ Synaptics Precision Haptic & Gesture Trackpad (Web Vibration API & Pointer Events)
+ *   3. 🎯 Mission Explorer: Leaflet Map + Instant Canvas Viz + 60fps Oscilloscope
+ *   4. ⚖️ Binaural Era Comparator: Left Ear (Baseline) vs Right Ear (Current Anomaly)
+ *   5. 🔍 Aural Anomaly Scanner: Automated statistical outlier screening (>2σ) & diagnostics
+ *   6. ♿ Accessible Earth Lab: BVI acoustic ruler, plain-language verbalizer & telemetry
+ *   7. 📋 NASA-style Scientific Diagnostics Report Exporter (.txt / clipboard)
  */
 (function () {
   'use strict';
@@ -35,6 +35,17 @@
   let scannerRunning = false;
   let scannerTimer   = null;
 
+  // Synaptics & Haptic State
+  let hapticsActive  = true;
+  let isPointerDown  = false;
+  let lastTapTime    = 0;
+  let wheelThrottle  = 0;
+
+  // Voice Recognition State
+  let isListening        = false;
+  let speechRecognition  = null;
+  let voiceToastTimer    = null;
+
   // ─── DOM References ───────────────────────────────────────────────────────
   const $ = id => document.getElementById(id);
   const landingView = $('view-landing');
@@ -51,7 +62,17 @@
     accessibility: $('panel-accessibility')
   };
 
-  // Top Telemetry Strip
+  // Top Nav Voice & Synaptics Controls
+  const btnVoiceToggle    = $('btn-voice-toggle');
+  const voiceBtnLabel     = $('voice-btn-label');
+  const micIcon           = $('mic-icon');
+  const btnSynapticsToggle= $('btn-synaptics-toggle');
+  const synapticsBtnLabel = $('synaptics-btn-label');
+  const btnVoiceGuide     = $('btn-voice-guide');
+  const voiceHud          = $('voice-hud');
+  const voiceHudText      = $('voice-hud-text');
+
+  // Telemetry Strip
   const telDot    = $('tel-dot');
   const telStatus = $('tel-status');
   const telDate   = $('tel-date');
@@ -97,6 +118,10 @@
   const speedSel = $('speed-sel');
   const volRng   = $('vol-rng');
 
+  // Synaptics Touchpad Zone
+  const synapticsPad        = $('synaptics-pad');
+  const synapticsGestureInd = $('synaptics-gesture-ind');
+
   // Canvases
   const heroCanvas = $('hero-canvas');
   const waveCanvas = $('waveform-canvas');
@@ -137,6 +162,11 @@
   const btnCopyReport   = $('btn-copy-report');
   const btnDownloadRep  = $('btn-download-report');
 
+  // Voice Guide Modal Elements
+  const voiceModal          = $('voice-modal');
+  const btnCloseVoiceModal  = $('btn-close-voice-modal');
+  const btnDismissVoiceModal= $('btn-dismiss-voice-modal');
+
   // ─── App Boot ────────────────────────────────────────────────────────────
   async function init() {
     startHeroAnimation();
@@ -154,6 +184,7 @@
     wireAnomalyScanner();
     wireAccessibilityLab();
     wireReportModal();
+    wireVoiceAndSynaptics();
     wireAudioCallbacks();
     startOscilloscope();
   }
@@ -170,7 +201,6 @@
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, W, H);
 
-      // Background grid
       ctx.strokeStyle = 'rgba(0,212,255,0.08)';
       ctx.lineWidth = 1;
       for (let i = 1; i < 4; i++) {
@@ -269,6 +299,8 @@
       }
     });
 
+    triggerHaptic(12);
+
     if (mode === 'explorer') {
       setTimeout(resizeVizCanvas, 50);
       if (leafMap) leafMap.invalidateSize();
@@ -304,6 +336,7 @@
       curData = await r.json();
       curMeta = meta;
       setupPlayer(meta, curData);
+      triggerHaptic([15, 20, 25]);
     } catch (e) {
       alert(`Could not load ${meta.data_file}. Run: python3 -m http.server 8000`);
     }
@@ -513,7 +546,6 @@
       ctx.lineWidth = 3; ctx.stroke();
     }
 
-    // Value readout overlay
     ctx.font = `bold ${Math.round(14 + t * 8)}px 'Courier New'`;
     ctx.fillStyle = isAlert ? '#ff3c38' : '#fff';
     ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -521,7 +553,6 @@
     ctx.fillText(`${frame.value.toFixed(1)}${storyData.units}`, cx, cy);
     ctx.shadowBlur = 0;
 
-    // Ripple updates
     const alive = [];
     ripples.forEach(rp => {
       rp.r += 2.5; rp.alpha -= 0.025;
@@ -550,6 +581,9 @@
     const total = curData.frames.length;
     const t = (frame.value - curData.min) / ((curData.max - curData.min) || 1);
     const isAlert = curData.threshold !== null && frame.value >= curData.threshold;
+
+    // Trigger subtle Synaptics haptic tick on each frame change
+    triggerHaptic(8);
 
     // Header Telemetry
     telDate.textContent  = frame.date;
@@ -595,6 +629,9 @@
 
   // ─── Threshold Alarm ─────────────────────────────────────────────────────
   function triggerAlert(frame) {
+    // Powerful Haptic Anomaly Shockwave
+    triggerHapticAlert();
+
     flashOverlay.classList.remove('on');
     void flashOverlay.offsetWidth;
     flashOverlay.classList.add('on');
@@ -629,8 +666,8 @@
 
   function wireBinauralComparator() {
     if (compSliderA && compSliderB) {
-      compSliderA.addEventListener('input', updateComparatorUI);
-      compSliderB.addEventListener('input', updateComparatorUI);
+      compSliderA.addEventListener('input', () => { triggerHaptic(8); updateComparatorUI(); });
+      compSliderB.addEventListener('input', () => { triggerHaptic(8); updateComparatorUI(); });
     }
     if (btnCompPlay) {
       btnCompPlay.addEventListener('click', () => {
@@ -639,6 +676,7 @@
         const idxB = parseInt(compSliderB.value, 10);
         const valA = curData.frames[idxA].value;
         const valB = curData.frames[idxB].value;
+        triggerHaptic([20, 20, 20]);
         AudioEngine.playBinauralComparison(valA, valB, curData);
       });
     }
@@ -699,7 +737,6 @@
     const variance = vals.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / (n - 1 || 1);
     const std = Math.sqrt(variance);
 
-    // Find all outliers: > 2 * std OR crossing threshold
     const anomalies = [];
     data.frames.forEach((f, idx) => {
       const z = (f.value - mean) / (std || 1);
@@ -749,6 +786,7 @@
         </td>
       `;
       tr.querySelector('.btn-table-audition').addEventListener('click', () => {
+        triggerHaptic([30, 20, 50]);
         AudioEngine.seek(anom.index);
         AudioEngine.triggerAnomalySonar(90);
       });
@@ -773,7 +811,7 @@
 
     scannerRunning = true;
     btnStartScanner.textContent = '⏹ Stop Sonar Scan';
-    AudioEngine.setRate(3.0); // High speed
+    AudioEngine.setRate(3.0);
     AudioEngine.seek(0);
     AudioEngine.play();
 
@@ -788,6 +826,7 @@
         return;
       }
       if (anomIndices.has(AudioEngine.currentIndex)) {
+        triggerHapticAlert();
         AudioEngine.triggerAnomalySonar(92);
       }
     }, 120);
@@ -798,6 +837,7 @@
     document.querySelectorAll('.btn-ruler').forEach(btn => {
       btn.addEventListener('click', () => {
         const note = parseInt(btn.dataset.note, 10);
+        triggerHaptic(15);
         AudioEngine.ensureInit().then(() => {
           Tone.start();
           const synth = new Tone.Synth().toDestination();
@@ -838,6 +878,7 @@
       btnCopyReport.addEventListener('click', () => {
         navigator.clipboard.writeText(reportContent.textContent);
         btnCopyReport.textContent = '✅ Copied!';
+        triggerHaptic(20);
         setTimeout(() => { btnCopyReport.textContent = '📋 Copy to Clipboard'; }, 2000);
       });
 
@@ -849,6 +890,7 @@
         a.download = `NASA_Sonification_Report_${curData ? curData.story_id : 'export'}.txt`;
         a.click();
         URL.revokeObjectURL(url);
+        triggerHaptic([15, 30]);
       });
     }
   }
@@ -908,7 +950,7 @@ Timbre Modulation:         Entropy/Variance -> Sine (low) -> Triangle (mid) -> S
 Rate of Change Velocity:   Scaled dynamically from 60 BPM (stable) to 160 BPM (acute anomaly)
 Alert Sound Architecture:  440 Hz Metal Bell + Pink Noise burst
 Spatial Stereo Pan:        Geographic Longitude [-180°, +180°] -> [-1.0 (Left), +1.0 (Right)]
-Universal Accessibility:   WCAG 2.1 AA Compliant (ARIA Live Region, Keyboard Controls, BVI Lab)
+Universal Accessibility:   WCAG 2.1 AA Compliant (Voice Command API, Synaptics Haptics, BVI Lab)
 
 ================================================================================
 CONFIRMATION: This report and sonification was computed from verified NASA 
@@ -918,6 +960,329 @@ Earth Observation archives and is free for open educational and research use.
 
     reportContent.textContent = text;
     reportModal.showModal();
+  }
+
+  // ─── 🎤 VOICE CONTROL & 🎛️ SYNAPTICS HAPTICS CONTROLLER ───────────────────
+
+  function triggerHaptic(duration = 10) {
+    if (!hapticsActive) return;
+    try {
+      if ('vibrate' in navigator) {
+        navigator.vibrate(duration);
+      }
+    } catch (_) {}
+  }
+
+  function triggerHapticAlert() {
+    if (!hapticsActive) return;
+    try {
+      if ('vibrate' in navigator) {
+        navigator.vibrate([40, 30, 80]);
+      }
+    } catch (_) {}
+  }
+
+  function showVoiceToast(text, isAlert = false) {
+    if (!voiceHud) return;
+    clearTimeout(voiceToastTimer);
+    voiceHud.hidden = false;
+    voiceHud.classList.toggle('alert', isAlert);
+    voiceHudText.textContent = text;
+    voiceToastTimer = setTimeout(() => {
+      if (!isListening) {
+        voiceHud.hidden = true;
+      } else {
+        voiceHudText.textContent = 'Listening for voice command...';
+        voiceHud.classList.remove('alert');
+      }
+    }, 3500);
+  }
+
+  function executeVoiceCommand(rawTranscript) {
+    const text = rawTranscript.toLowerCase().trim();
+    showVoiceToast(`Heard: "${text}"`);
+    triggerHaptic(20);
+
+    // 1. Play / Start
+    if (text.includes('play') || text.includes('start') || text.includes('resume')) {
+      AudioEngine.play();
+      return;
+    }
+
+    // 2. Pause / Stop
+    if (text.includes('pause') || text.includes('stop') || text.includes('freeze') || text.includes('halt')) {
+      AudioEngine.pause();
+      return;
+    }
+
+    // 3. Next / Forward
+    if (text.includes('next') || text.includes('forward') || text.includes('advance')) {
+      AudioEngine.pause();
+      AudioEngine.seek(AudioEngine.currentIndex + 1);
+      return;
+    }
+
+    // 4. Back / Previous / Rewind
+    if (text.includes('back') || text.includes('previous') || text.includes('rewind') || text.includes('step back')) {
+      AudioEngine.pause();
+      AudioEngine.seek(AudioEngine.currentIndex - 1);
+      return;
+    }
+
+    // 5. Stories 1 - 5
+    if (text.includes('story 1') || text.includes('story one') || text.includes('seasons') || text.includes('season') || text.includes('mediterranean')) {
+      if (stories[0]) loadStory(stories[0]);
+      return;
+    }
+    if (text.includes('story 2') || text.includes('story two') || text.includes('trend') || text.includes('tokyo') || text.includes('drift')) {
+      if (stories[1]) loadStory(stories[1]);
+      return;
+    }
+    if (text.includes('story 3') || text.includes('story three') || text.includes('heat dome') || text.includes('heat') || text.includes('canada')) {
+      if (stories[2]) loadStory(stories[2]);
+      return;
+    }
+    if (text.includes('story 4') || text.includes('story four') || text.includes('amazon') || text.includes('rain') || text.includes('rainfall')) {
+      if (stories[3]) loadStory(stories[3]);
+      return;
+    }
+    if (text.includes('story 5') || text.includes('story five') || text.includes('australia') || text.includes('bushfire') || text.includes('wildfire') || text.includes('black summer')) {
+      if (stories[4]) loadStory(stories[4]);
+      return;
+    }
+
+    // 6. Workstation Tools
+    if (text.includes('explorer') || text.includes('map') || text.includes('mission')) {
+      setWorkstationMode('explorer');
+      return;
+    }
+    if (text.includes('compare') || text.includes('comparator') || text.includes('beating') || text.includes('divergence')) {
+      setWorkstationMode('comparator');
+      return;
+    }
+    if (text.includes('scan') || text.includes('scanner') || text.includes('anomaly')) {
+      setWorkstationMode('scanner');
+      return;
+    }
+    if (text.includes('accessibility') || text.includes('accessible') || text.includes('lab') || text.includes('ruler')) {
+      setWorkstationMode('accessibility');
+      return;
+    }
+
+    // 7. Run Sonar Scan
+    if (text.includes('run scan') || text.includes('start scan') || text.includes('detect')) {
+      setWorkstationMode('scanner');
+      runHighSpeedScanner();
+      return;
+    }
+
+    // 8. Speed
+    if (text.includes('faster') || text.includes('speed up') || text.includes('double speed')) {
+      speedSel.value = '2.0';
+      AudioEngine.setRate(2.0);
+      return;
+    }
+    if (text.includes('slower') || text.includes('slow down') || text.includes('half speed')) {
+      speedSel.value = '0.5';
+      AudioEngine.setRate(0.5);
+      return;
+    }
+    if (text.includes('normal speed') || text.includes('regular speed') || text.includes('reset speed')) {
+      speedSel.value = '1.0';
+      AudioEngine.setRate(1.0);
+      return;
+    }
+
+    // 9. Volume
+    if (text.includes('louder') || text.includes('volume up') || text.includes('boost')) {
+      volRng.value = Math.min(12, parseInt(volRng.value, 10) + 3);
+      AudioEngine.setVolume(parseFloat(volRng.value));
+      return;
+    }
+    if (text.includes('quieter') || text.includes('volume down') || text.includes('softer')) {
+      volRng.value = Math.max(-10, parseInt(volRng.value, 10) - 3);
+      AudioEngine.setVolume(parseFloat(volRng.value));
+      return;
+    }
+
+    // 10. Report & Catalog
+    if (text.includes('report') || text.includes('export') || text.includes('diagnostics')) {
+      openReportModal();
+      return;
+    }
+    if (text.includes('catalog') || text.includes('home') || text.includes('stories')) {
+      btnBack.click();
+      return;
+    }
+
+    showVoiceToast(`Command not recognized: "${text}". Say "Help" for list.`, true);
+  }
+
+  function wireVoiceAndSynaptics() {
+    // 🎤 Web Speech API Voice Controller Setup
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (btnVoiceToggle) {
+      if (!SpeechRec) {
+        btnVoiceToggle.title = 'Speech Recognition is supported in Chrome, Edge, and Safari.';
+        btnVoiceToggle.addEventListener('click', () => {
+          showVoiceToast('Speech Recognition requires Chrome, Edge, or Safari browser.', true);
+        });
+      } else {
+        speechRecognition = new SpeechRec();
+        speechRecognition.continuous = true;
+        speechRecognition.interimResults = false;
+        speechRecognition.lang = 'en-US';
+
+        speechRecognition.onstart = () => {
+          isListening = true;
+          btnVoiceToggle.classList.add('listening');
+          voiceBtnLabel.textContent = 'Voice Control: ACTIVE';
+          micIcon.textContent = '🔴';
+          voiceHud.hidden = false;
+          voiceHudText.textContent = 'Listening... Say "Play", "Pause", "Story 1-5", "Faster"';
+        };
+
+        speechRecognition.onresult = (e) => {
+          const lastIdx = e.results.length - 1;
+          const transcript = e.results[lastIdx][0].transcript;
+          executeVoiceCommand(transcript);
+        };
+
+        speechRecognition.onerror = (e) => {
+          console.warn('Speech recognition error:', e.error);
+          if (e.error === 'not-allowed') {
+            showVoiceToast('Microphone access denied. Enable mic in browser settings.', true);
+            isListening = false;
+            btnVoiceToggle.classList.remove('listening');
+            voiceBtnLabel.textContent = 'Voice Control: OFF';
+            micIcon.textContent = '🎤';
+          }
+        };
+
+        speechRecognition.onend = () => {
+          if (isListening) {
+            try { speechRecognition.start(); } catch (_) {}
+          } else {
+            btnVoiceToggle.classList.remove('listening');
+            voiceBtnLabel.textContent = 'Voice Control: OFF';
+            micIcon.textContent = '🎤';
+            voiceHud.hidden = true;
+          }
+        };
+
+        btnVoiceToggle.addEventListener('click', () => {
+          if (!isListening) {
+            try {
+              speechRecognition.start();
+            } catch (_) {}
+          } else {
+            isListening = false;
+            try { speechRecognition.stop(); } catch (_) {}
+          }
+        });
+      }
+    }
+
+    // 🎛️ Synaptics Haptics Toggle
+    if (btnSynapticsToggle) {
+      btnSynapticsToggle.addEventListener('click', () => {
+        hapticsActive = !hapticsActive;
+        btnSynapticsToggle.classList.toggle('active', hapticsActive);
+        synapticsBtnLabel.textContent = hapticsActive ? 'Synaptics: ACTIVE' : 'Synaptics: OFF';
+        if (hapticsActive) triggerHaptic([20, 20]);
+      });
+    }
+
+    // Voice & Touch Guide Dialog
+    if (btnVoiceGuide && voiceModal) {
+      btnVoiceGuide.addEventListener('click', () => voiceModal.showModal());
+      if (btnCloseVoiceModal) btnCloseVoiceModal.addEventListener('click', () => voiceModal.close());
+      if (btnDismissVoiceModal) btnDismissVoiceModal.addEventListener('click', () => voiceModal.close());
+      voiceModal.addEventListener('click', (e) => { if (e.target === voiceModal) voiceModal.close(); });
+    }
+
+    // 🎛️ Synaptics Precision Haptic Touchpad Area Gestures
+    if (synapticsPad) {
+      function handlePadScrub(clientX) {
+        if (!curData || !curData.frames) return;
+        const rect = synapticsPad.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+        const targetIdx = Math.round(ratio * (curData.frames.length - 1));
+        AudioEngine.seek(targetIdx);
+        triggerHaptic(10);
+        if (synapticsGestureInd) {
+          synapticsGestureInd.textContent = `SCRUBBING [F${targetIdx + 1}]`;
+          synapticsGestureInd.classList.add('scrubbing');
+        }
+      }
+
+      synapticsPad.addEventListener('pointerdown', (e) => {
+        isPointerDown = true;
+        synapticsPad.classList.add('active-gesture');
+        synapticsPad.setPointerCapture(e.pointerId);
+
+        // Check for double tap / rapid two click (Play/Pause)
+        const now = Date.now();
+        if (now - lastTapTime < 300) {
+          btnPlay.click();
+          triggerHaptic([30, 30]);
+          lastTapTime = 0;
+          return;
+        }
+        lastTapTime = now;
+
+        handlePadScrub(e.clientX);
+      });
+
+      synapticsPad.addEventListener('pointermove', (e) => {
+        if (!isPointerDown) return;
+        handlePadScrub(e.clientX);
+      });
+
+      const endPointer = (e) => {
+        if (!isPointerDown) return;
+        isPointerDown = false;
+        synapticsPad.classList.remove('active-gesture');
+        try { synapticsPad.releasePointerCapture(e.pointerId); } catch (_) {}
+        if (synapticsGestureInd) {
+          synapticsGestureInd.textContent = 'READY';
+          synapticsGestureInd.classList.remove('scrubbing');
+        }
+      };
+
+      synapticsPad.addEventListener('pointerup', endPointer);
+      synapticsPad.addEventListener('pointercancel', endPointer);
+
+      // Horizontal trackpad wheel gesture (Two-finger horizontal swipe on precision trackpad)
+      synapticsPad.addEventListener('wheel', (e) => {
+        if (Math.abs(e.deltaX) > 10) {
+          e.preventDefault();
+          const now = Date.now();
+          if (now - wheelThrottle > 60) {
+            wheelThrottle = now;
+            const direction = e.deltaX > 0 ? 1 : -1;
+            AudioEngine.seek(AudioEngine.currentIndex + direction);
+            triggerHaptic(8);
+          }
+        }
+      }, { passive: false });
+    }
+
+    // Global Synaptics Wheel Support over Scrubber & Map
+    window.addEventListener('wheel', (e) => {
+      if (playerView.hidden || !curData) return;
+      // If user swipes horizontally with trackpad two fingers
+      if (Math.abs(e.deltaX) > 18 && Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        const now = Date.now();
+        if (now - wheelThrottle > 75) {
+          wheelThrottle = now;
+          const direction = e.deltaX > 0 ? 1 : -1;
+          AudioEngine.seek(AudioEngine.currentIndex + direction);
+          triggerHaptic(8);
+        }
+      }
+    }, { passive: true });
   }
 
   // ─── Real-Time 60 FPS Oscilloscope ───────────────────────────────────────
@@ -1002,12 +1367,21 @@ Earth Observation archives and is free for open educational and research use.
     });
 
     btnPlay.addEventListener('click', () => {
+      triggerHaptic(15);
       if (AudioEngine.isPlaying) AudioEngine.pause();
       else AudioEngine.play();
     });
 
-    btnPrev.addEventListener('click', () => { AudioEngine.pause(); AudioEngine.seek(AudioEngine.currentIndex - 1); });
-    btnNext.addEventListener('click', () => { AudioEngine.pause(); AudioEngine.seek(AudioEngine.currentIndex + 1); });
+    btnPrev.addEventListener('click', () => {
+      triggerHaptic(8);
+      AudioEngine.pause();
+      AudioEngine.seek(AudioEngine.currentIndex - 1);
+    });
+    btnNext.addEventListener('click', () => {
+      triggerHaptic(8);
+      AudioEngine.pause();
+      AudioEngine.seek(AudioEngine.currentIndex + 1);
+    });
 
     scrubber.addEventListener('input', e => AudioEngine.seek(parseInt(e.target.value, 10)));
     speedSel.addEventListener('change', e => AudioEngine.setRate(parseFloat(e.target.value)));
@@ -1016,7 +1390,10 @@ Earth Observation archives and is free for open educational and research use.
     AudioEngine.setVolume && AudioEngine.setVolume(4);
 
     document.querySelectorAll('.btn-sample').forEach(btn => {
-      btn.addEventListener('click', () => AudioEngine.playSample(btn.dataset.sample));
+      btn.addEventListener('click', () => {
+        triggerHaptic(12);
+        AudioEngine.playSample(btn.dataset.sample);
+      });
     });
 
     // Universal Keyboard Navigation
@@ -1026,6 +1403,7 @@ Earth Observation archives and is free for open educational and research use.
 
       if (e.key==='Escape' && !playerView.hidden) {
         if (reportModal && reportModal.open) { reportModal.close(); return; }
+        if (voiceModal && voiceModal.open) { voiceModal.close(); return; }
         e.preventDefault(); btnBack.click(); return;
       }
 
