@@ -83,6 +83,9 @@
   const btnTestMic        = $('btn-test-mic');
   const transcriptPlaceholder = $('transcript-placeholder');
   const transcriptInterim = $('transcript-interim');
+  const btnClickToSpeak   = $('btn-click-to-speak');
+  const pttIcon           = $('ptt-icon');
+  const pttText           = $('ptt-text');
 
   // Telemetry Strip
   const telDot    = $('tel-dot');
@@ -1291,6 +1294,95 @@ Earth Observation archives and is free for open educational and research use.
     }
   }
 
+  // ─── YOUTUBE-STYLE ON-DEMAND CLICK-TO-SPEAK CONTROLLER ────────────────────
+  let clickToSpeakActive  = false;
+  let clickToSpeakTimeout = null;
+
+  async function triggerClickToSpeak() {
+    if (clickToSpeakActive) {
+      stopClickToSpeak('Microphone closed.');
+      return;
+    }
+
+    clickToSpeakActive = true;
+    if (btnClickToSpeak) {
+      btnClickToSpeak.classList.add('listening');
+      if (pttText) pttText.textContent = 'Listening... Speak now!';
+      if (pttIcon) pttIcon.textContent = '🔴';
+    }
+    if (btnVoiceToggle) {
+      btnVoiceToggle.classList.add('listening', 'active');
+      btnVoiceToggle.setAttribute('aria-pressed', 'true');
+      if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: LISTENING';
+      if (micIcon) micIcon.textContent = '🔴';
+    }
+    if (transcriptPlaceholder) {
+      transcriptPlaceholder.style.display = 'inline';
+      transcriptPlaceholder.textContent = '🔴 Listening... Say "Go", "Stop", "Three", "Up", "Down", "Scan"';
+    }
+    if (transcriptInterim) transcriptInterim.innerHTML = '';
+    updateVoiceStationStatus('🔴 Listening... Speak your command into your microphone now', 'live');
+    triggerHaptic([30, 20]);
+
+    // Start hardware VU meter for this single utterance
+    startMicVisualizer();
+
+    // Start on-device local AI recognition
+    startLocalAiListening();
+
+    // Start Web Speech API if supported in browser
+    if (speechRecognition) {
+      try {
+        speechRecognition.start();
+      } catch (_) {}
+    }
+
+    // Auto-turn-off timeout after 5.5s if no speech is detected
+    clearTimeout(clickToSpeakTimeout);
+    clickToSpeakTimeout = setTimeout(() => {
+      if (clickToSpeakActive) {
+        stopClickToSpeak('Microphone closed. Click mic whenever you want to speak.');
+      }
+    }, 5500);
+  }
+
+  function stopClickToSpeak(reasonMessage) {
+    if (!clickToSpeakActive) return;
+    clickToSpeakActive = false;
+    clearTimeout(clickToSpeakTimeout);
+
+    // Stop local AI listening
+    stopLocalAiListening();
+
+    // Stop Web Speech API
+    if (speechRecognition) {
+      try { speechRecognition.stop(); } catch (_) {}
+    }
+
+    // Stop hardware mic stream immediately (preserves privacy & battery)
+    stopMicVisualizer();
+
+    // Reset button UI
+    if (btnClickToSpeak) {
+      btnClickToSpeak.classList.remove('listening');
+      if (pttText) pttText.textContent = 'Click to Speak';
+      if (pttIcon) pttIcon.textContent = '🎙️';
+    }
+    if (btnVoiceToggle) {
+      btnVoiceToggle.classList.remove('listening');
+      if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: READY';
+      if (micIcon) micIcon.textContent = '🎤';
+    }
+
+    if (reasonMessage) {
+      updateVoiceStationStatus(reasonMessage, 'info');
+      if (transcriptPlaceholder) {
+        transcriptPlaceholder.style.display = 'inline';
+        transcriptPlaceholder.textContent = reasonMessage;
+      }
+    }
+  }
+
   function handleLocalAiWord(word, score) {
     const pct = Math.round(score * 100);
     if (transcriptPlaceholder) transcriptPlaceholder.style.display = 'none';
@@ -1299,6 +1391,9 @@ Earth Observation archives and is free for open educational and research use.
     }
 
     triggerHaptic(20);
+
+    // Stop listening immediately after word is recognized (like YouTube voice search)
+    stopClickToSpeak();
 
     // Map the 18 words to Earth Jukebox actions:
     switch (word) {
@@ -1372,21 +1467,13 @@ Earth Observation archives and is free for open educational and research use.
         btnVoiceToggle.classList.add('active');
         btnVoiceToggle.setAttribute('aria-pressed', 'true');
       }
-      if (voiceBtnLabel) voiceBtnLabel.textContent = isListening ? 'Voice Control: ACTIVE' : 'Voice: ACTIVE';
+      if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: READY';
 
-      // Start hardware audio VU meter
-      startMicVisualizer();
+      // Pre-warm local AI engine in background (offline, zero-cloud)
+      initLocalAiSpeechEngine();
 
-      // Start on-device Local AI Speech Engine
-      startLocalAiListening();
+      updateVoiceStationStatus('Ready. Click the microphone button to speak, or use any voice command chip below.', 'info');
 
-      if (speechRecognition && !isListening) {
-        try {
-          speechRecognition.start();
-        } catch (_) {}
-      } else if (!speechRecognition) {
-        updateVoiceStationStatus('🤖 Local AI Speech Active! Say: "Go" (Play), "Stop" (Pause), "Three" (Heat Dome), "Up" (Volume)', 'live');
-      }
       if (voiceTextInput) {
         setTimeout(() => voiceTextInput.focus(), 100);
       }
@@ -1397,13 +1484,8 @@ Earth Observation archives and is free for open educational and research use.
 
   function closeVoiceStation() {
     if (!voiceStation) return;
+    stopClickToSpeak();
     voiceStation.hidden = true;
-    if (isListening && speechRecognition) {
-      isListening = false;
-      try { speechRecognition.stop(); } catch (_) {}
-    }
-    stopLocalAiListening();
-    stopMicVisualizer();
     if (btnVoiceToggle) {
       btnVoiceToggle.classList.remove('active', 'listening');
       btnVoiceToggle.setAttribute('aria-pressed', 'false');
@@ -1420,6 +1502,9 @@ Earth Observation archives and is free for open educational and research use.
     }
     updateVoiceStationStatus(`🗣️ Executing: "${text}"`, 'success');
     triggerHaptic(20);
+
+    // Stop listening once command is parsed
+    stopClickToSpeak();
 
     // 1. Play / Start
     if (text.includes('play') || text.includes('start') || text.includes('resume') || text.includes('begin') || text.includes('go')) {
@@ -1653,12 +1738,40 @@ Earth Observation archives and is free for open educational and research use.
       }
     }
 
-    // Toggle button in header
-    if (btnVoiceToggle) {
-      btnVoiceToggle.addEventListener('click', () => {
-        openVoiceStation();
+    // YouTube-Style Click-to-Speak Button
+    if (btnClickToSpeak) {
+      btnClickToSpeak.addEventListener('click', () => {
+        triggerClickToSpeak();
       });
     }
+
+    // Toggle / Speak button in header
+    if (btnVoiceToggle) {
+      btnVoiceToggle.addEventListener('click', () => {
+        if (voiceStation && voiceStation.hidden) {
+          openVoiceStation();
+          triggerClickToSpeak();
+        } else {
+          if (clickToSpeakActive) {
+            stopClickToSpeak('Microphone closed.');
+          } else {
+            triggerClickToSpeak();
+          }
+        }
+      });
+    }
+
+    // Hotkey 'V': Press V anywhere (not in text input) to Click-to-Speak
+    window.addEventListener('keydown', (e) => {
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+      if (e.key === 'v' || e.key === 'V') {
+        e.preventDefault();
+        if (voiceStation && voiceStation.hidden) {
+          openVoiceStation();
+        }
+        triggerClickToSpeak();
+      }
+    });
 
     // Test Mic Diagnostic Button
     if (btnTestMic) {
