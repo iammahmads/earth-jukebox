@@ -72,6 +72,7 @@
           <span class="voice-pulse-ring" id="voice-pulse-ring"></span>
           <span id="voice-station-icon">🎤</span>
           <strong id="voice-station-title">VOICE COMMAND STATION:</strong>
+          <span id="voice-engine-badge" class="voice-engine-badge">🤖 Local AI Engine</span>
           <span id="voice-station-text">Ready. Speak any command into your microphone or click any voice command below...</span>
         </div>
 
@@ -92,7 +93,7 @@
       <div class="voice-live-feed-row" id="voice-live-feed-row">
         <span class="feed-tag">LIVE SPEECH FEED:</span>
         <div class="voice-live-transcript" id="voice-live-transcript" aria-live="polite">
-          <span class="transcript-placeholder" id="transcript-placeholder">Speak now... (e.g. "Play", "Story 3", "Faster", "Louder", "Scan")</span>
+          <span class="transcript-placeholder" id="transcript-placeholder">Speak clearly: "Go" (Play), "Stop" (Pause), "One" to "Five" (Stories), "Up" / "Down" (Volume), "Right" / "Left" (Seek)</span>
           <span class="transcript-interim" id="transcript-interim"></span>
         </div>
       </div>
@@ -626,6 +627,9 @@
   <!-- CDN Dependencies -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+  <!-- Local On-Device AI Speech Recognition Engine (Offline, Zero Cloud Dependency) -->
+  <script src="assets/vendor/tf.min.js"></script>
+  <script src="assets/vendor/speech-commands.min.js"></script>
   <script src="audio.js"></script>
   <script src="app.js"></script>
 </body>

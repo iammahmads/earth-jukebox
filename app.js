@@ -73,6 +73,7 @@
   const voiceStationText  = $('voice-station-text');
   const voiceStationIcon  = $('voice-station-icon');
   const voiceStationTitle = $('voice-station-title');
+  const voiceEngineBadge  = $('voice-engine-badge');
   const btnCloseVoiceStation = $('btn-close-voice-station');
   const voiceInputForm    = $('voice-input-form');
   const voiceTextInput    = $('voice-text-input');
@@ -1192,6 +1193,173 @@ Earth Observation archives and is free for open educational and research use.
     updateVoiceStationStatus(text, isAlert ? 'alert' : 'info');
   }
 
+  // ─── LOCAL ON-DEVICE NEURAL SPEECH COMMANDS AI ENGINE ───────────────────────
+  let localAiRecognizer = null;
+  let isAiModelLoading  = false;
+  let isAiListening     = false;
+
+  async function initLocalAiSpeechEngine() {
+    if (localAiRecognizer || isAiModelLoading) return;
+    try {
+      isAiModelLoading = true;
+      if (typeof speechCommands === 'undefined') {
+        console.warn('speechCommands library not loaded yet');
+        isAiModelLoading = false;
+        return;
+      }
+      if (voiceEngineBadge) {
+        voiceEngineBadge.textContent = '🤖 Loading Local AI...';
+        voiceEngineBadge.classList.add('loading');
+      }
+
+      // Load model from local offline assets
+      localAiRecognizer = speechCommands.create(
+        'BROWSER_FFT',
+        null,
+        'assets/models/speech-commands/model.json',
+        'assets/models/speech-commands/metadata.json'
+      );
+
+      await localAiRecognizer.ensureModelLoaded();
+      isAiModelLoading = false;
+      console.log('Local AI Speech Commands Model Loaded Successfully!');
+      if (voiceEngineBadge) {
+        voiceEngineBadge.textContent = '🤖 Local AI: ACTIVE';
+        voiceEngineBadge.classList.remove('loading');
+        voiceEngineBadge.classList.add('active');
+      }
+      if (voiceStationText && !isListening) {
+        voiceStationText.textContent = '🤖 Local AI Voice Ready! Say: "Go" (Play), "Stop" (Pause), "Three" (Heat Dome), "Up" (Volume)';
+      }
+    } catch (err) {
+      console.warn('Could not load local AI speech model:', err);
+      isAiModelLoading = false;
+      if (voiceEngineBadge) {
+        voiceEngineBadge.textContent = '🤖 Local AI: Standby';
+      }
+    }
+  }
+
+  async function startLocalAiListening() {
+    if (!localAiRecognizer) {
+      await initLocalAiSpeechEngine();
+    }
+    if (!localAiRecognizer || isAiListening) return;
+
+    try {
+      const words = localAiRecognizer.wordLabels();
+      isAiListening = true;
+
+      await localAiRecognizer.listen(result => {
+        const scores = result.scores;
+        let maxScore = -1;
+        let maxIdx = -1;
+        for (let i = 0; i < scores.length; i++) {
+          if (scores[i] > maxScore) {
+            maxScore = scores[i];
+            maxIdx = i;
+          }
+        }
+        const detectedWord = words[maxIdx];
+
+        // Filter background noise and unknown sounds
+        if (maxScore >= 0.70 && detectedWord !== '_background_noise_' && detectedWord !== '_unknown_') {
+          handleLocalAiWord(detectedWord, maxScore);
+        }
+      }, {
+        includeSpectrogram: false,
+        probabilityThreshold: 0.70,
+        overlapFactor: 0.45
+      });
+      console.log('Local AI Speech Commands listening actively.');
+    } catch (err) {
+      console.warn('Error starting local AI speech recognition:', err);
+      isAiListening = false;
+    }
+  }
+
+  function stopLocalAiListening() {
+    if (localAiRecognizer && isAiListening) {
+      try {
+        localAiRecognizer.stopListening();
+      } catch (_) {}
+      isAiListening = false;
+    }
+  }
+
+  function handleLocalAiWord(word, score) {
+    const pct = Math.round(score * 100);
+    if (transcriptPlaceholder) transcriptPlaceholder.style.display = 'none';
+    if (transcriptInterim) {
+      transcriptInterim.innerHTML = `<span class="heard-tag">🗣️ Spoken Word:</span> <strong class="heard-words">"${word.toUpperCase()}"</strong> <span style="font-size:0.7rem;color:var(--cyan)">(${pct}% AI match)</span>`;
+    }
+
+    triggerHaptic(20);
+
+    // Map the 18 words to Earth Jukebox actions:
+    switch (word) {
+      case 'go':
+        updateVoiceStationStatus(`🗣️ AI Voice: "GO" ➔ PLAY`, 'success');
+        AudioEngine.play();
+        break;
+      case 'stop':
+        updateVoiceStationStatus(`🗣️ AI Voice: "STOP" ➔ PAUSE`, 'success');
+        AudioEngine.pause();
+        break;
+      case 'one':
+        updateVoiceStationStatus(`🗣️ AI Voice: "ONE" ➔ Story 1 (Seasonal Cycle)`, 'success');
+        if (stories[0]) loadStory(stories[0]);
+        break;
+      case 'two':
+        updateVoiceStationStatus(`🗣️ AI Voice: "TWO" ➔ Story 2 (Tokyo Trend)`, 'success');
+        if (stories[1]) loadStory(stories[1]);
+        break;
+      case 'three':
+        updateVoiceStationStatus(`🗣️ AI Voice: "THREE" ➔ Story 3 (Heat Dome ⭐)`, 'success');
+        if (stories[2]) loadStory(stories[2]);
+        break;
+      case 'four':
+        updateVoiceStationStatus(`🗣️ AI Voice: "FOUR" ➔ Story 4 (Amazon Precipitation)`, 'success');
+        if (stories[3]) loadStory(stories[3]);
+        break;
+      case 'five':
+        updateVoiceStationStatus(`🗣️ AI Voice: "FIVE" ➔ Story 5 (Australia Bushfires)`, 'success');
+        if (stories[4]) loadStory(stories[4]);
+        break;
+      case 'up':
+        updateVoiceStationStatus(`🗣️ AI Voice: "UP" ➔ Volume Boost (+3 dB)`, 'success');
+        volRng.value = Math.min(12, parseInt(volRng.value, 10) + 3);
+        AudioEngine.setVolume(parseFloat(volRng.value));
+        break;
+      case 'down':
+        updateVoiceStationStatus(`🗣️ AI Voice: "DOWN" ➔ Volume Softer (-3 dB)`, 'success');
+        volRng.value = Math.max(-10, parseInt(volRng.value, 10) - 3);
+        AudioEngine.setVolume(parseFloat(volRng.value));
+        break;
+      case 'right':
+        updateVoiceStationStatus(`🗣️ AI Voice: "RIGHT" ➔ Next Frame`, 'success');
+        AudioEngine.pause();
+        AudioEngine.seek(AudioEngine.currentIndex + 1);
+        break;
+      case 'left':
+        updateVoiceStationStatus(`🗣️ AI Voice: "LEFT" ➔ Previous Frame`, 'success');
+        AudioEngine.pause();
+        AudioEngine.seek(AudioEngine.currentIndex - 1);
+        break;
+      case 'yes':
+        updateVoiceStationStatus(`🗣️ AI Voice: "YES" ➔ Run Anomaly Sonar Scan`, 'success');
+        setWorkstationMode('scanner');
+        runHighSpeedScanner();
+        break;
+      case 'no':
+        updateVoiceStationStatus(`🗣️ AI Voice: "NO" ➔ Return to Mission Explorer`, 'success');
+        setWorkstationMode('explorer');
+        break;
+      default:
+        break;
+    }
+  }
+
   function openVoiceStation(forceOpen = false) {
     if (!voiceStation) return;
     if (forceOpen || voiceStation.hidden) {
@@ -1205,12 +1373,15 @@ Earth Observation archives and is free for open educational and research use.
       // Start hardware audio VU meter
       startMicVisualizer();
 
+      // Start on-device Local AI Speech Engine
+      startLocalAiListening();
+
       if (speechRecognition && !isListening) {
         try {
           speechRecognition.start();
         } catch (_) {}
       } else if (!speechRecognition) {
-        updateVoiceStationStatus('ℹ️ Live Mic requires Chrome/Edge over HTTP. Voice Commander is active! Click any command chip below or type a command:', 'alert');
+        updateVoiceStationStatus('🤖 Local AI Speech Active! Say: "Go" (Play), "Stop" (Pause), "Three" (Heat Dome), "Up" (Volume)', 'live');
       }
       if (voiceTextInput) {
         setTimeout(() => voiceTextInput.focus(), 100);
@@ -1227,6 +1398,7 @@ Earth Observation archives and is free for open educational and research use.
       isListening = false;
       try { speechRecognition.stop(); } catch (_) {}
     }
+    stopLocalAiListening();
     stopMicVisualizer();
     if (btnVoiceToggle) {
       btnVoiceToggle.classList.remove('active', 'listening');
@@ -1443,11 +1615,19 @@ Earth Observation archives and is free for open educational and research use.
             }
             if (voiceBtnLabel) voiceBtnLabel.textContent = 'Voice: ACTIVE';
             if (micIcon) micIcon.textContent = '🎤';
-            updateVoiceStationStatus('ℹ️ Microphone blocked or requires HTTP. Voice Station is ready! Click any command chip below or type a command:', 'alert');
+            updateVoiceStationStatus('ℹ️ Microphone blocked or requires HTTP. Local AI Voice & Command Chips active!', 'alert');
+          } else if (e.error === 'network') {
+            console.info('Google Cloud speech network disabled in Chromium. Local AI speech engine is running.');
+            if (voiceEngineBadge) {
+              voiceEngineBadge.textContent = '🤖 Local AI (Zero-Cloud)';
+              voiceEngineBadge.classList.add('active');
+            }
+            updateVoiceStationStatus('🤖 Local AI Speech Active! Say: "Go" (Play), "Stop" (Pause), "Three" (Heat Dome), "Up" (Volume)', 'live');
+            startLocalAiListening();
           } else if (e.error === 'no-speech') {
             if (isListening && transcriptPlaceholder) {
               transcriptPlaceholder.style.display = 'inline';
-              transcriptPlaceholder.textContent = 'Listening... (No speech detected yet. Speak clearly into your mic)';
+              transcriptPlaceholder.textContent = 'Listening... Speak clearly: "Go", "Stop", "Three", "Up", "Down"';
             }
           }
         };
