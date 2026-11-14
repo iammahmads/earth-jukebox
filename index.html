@@ -4,314 +4,267 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Earth Jukebox — NASA Earth Data Sonification</title>
-  <meta name="description" content="Experience Earth's climate data through sound and satellite imagery. NASA Space Apps Challenge 2026.">
+  <meta name="description" content="Hear Earth's climate through sound. 5 NASA time series. NASA Space Apps 2026.">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="assets/favicon.ico">
 </head>
 <body>
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <a href="#main" class="skip-link">Skip to main content</a>
 
-  <!-- ═══ SCANLINE OVERLAY (cosmetic, NASA screen feel) ═══ -->
-  <div class="scanlines" aria-hidden="true"></div>
-
-  <!-- ═══ HEADER / MISSION CONTROL BAR ═══ -->
-  <header class="app-header" role="banner">
-    <div class="header-inner">
-      <div class="logo-group">
-        <div class="logo-orb" aria-hidden="true">
-          <span class="logo-planet">🌍</span>
-          <span class="logo-ping"></span>
-        </div>
+  <!-- ═══ TOP NAV ═══ -->
+  <nav class="topnav" role="navigation" aria-label="Application navigation">
+    <div class="topnav-inner">
+      <div class="brand">
+        <div class="brand-orb" aria-hidden="true"><span class="brand-pulse"></span>🌍</div>
         <div>
-          <h1 class="app-title">EARTH JUKEBOX</h1>
-          <p class="app-tagline">NASA Earth Science · Sonification Dashboard</p>
+          <span class="brand-name">EARTH JUKEBOX</span>
+          <span class="brand-sub">NASA Space Apps 2026</span>
         </div>
       </div>
 
-      <!-- Live telemetry strip -->
-      <div class="telemetry-strip" aria-hidden="true">
-        <div class="telem-item">
-          <span class="telem-label">MISSION</span>
-          <span class="telem-value" id="tel-mission">STANDBY</span>
+      <div class="telemetry" aria-label="Mission telemetry" aria-live="polite">
+        <div class="tel-block" id="tel-status-block">
+          <div class="tel-dot" id="tel-dot"></div>
+          <span class="tel-val" id="tel-status">STANDBY</span>
         </div>
-        <div class="telem-sep">|</div>
-        <div class="telem-item">
-          <span class="telem-label">FRAME</span>
-          <span class="telem-value" id="tel-frame">—/—</span>
+        <div class="tel-sep" aria-hidden="true">|</div>
+        <div class="tel-block">
+          <span class="tel-key">DATE</span>
+          <span class="tel-val" id="tel-date">—</span>
         </div>
-        <div class="telem-sep">|</div>
-        <div class="telem-item">
-          <span class="telem-label">DATE</span>
-          <span class="telem-value" id="tel-date">—</span>
+        <div class="tel-sep" aria-hidden="true">|</div>
+        <div class="tel-block">
+          <span class="tel-key">VALUE</span>
+          <span class="tel-val" id="tel-value">—</span>
         </div>
-        <div class="telem-sep">|</div>
-        <div class="telem-item">
-          <span class="telem-label">VALUE</span>
-          <span class="telem-value" id="tel-value">—</span>
-        </div>
-        <div class="telem-sep">|</div>
-        <div class="status-dot-wrap">
-          <span class="status-dot" id="status-dot"></span>
-          <span class="telem-label" id="status-label">IDLE</span>
+        <div class="tel-sep" aria-hidden="true">|</div>
+        <div class="tel-block">
+          <span class="tel-key">FRAME</span>
+          <span class="tel-val" id="tel-frame">—</span>
         </div>
       </div>
 
-      <div class="header-badges">
-        <span class="nasa-badge">NASA SPACE APPS 2026</span>
+      <div class="nav-badges">
+        <span class="pill pill-nasa">NASA DATA</span>
+        <span class="pill pill-live" id="pill-live" hidden>◉ LIVE</span>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main id="main-content" class="main-content" role="main">
+  <!-- ═══ MAIN ═══ -->
+  <main id="main">
 
-    <!-- ═══════════════════════════════════════════════════
-         LANDING VIEW — Story Selection
-    ═══════════════════════════════════════════════════ -->
-    <section id="landing-view" class="view" aria-label="Story Selection">
+    <!-- ──────────── LANDING ──────────── -->
+    <section id="view-landing" class="view" aria-label="Story Selection">
 
-      <div class="landing-header">
-        <h2 class="section-title">
-          <span class="section-title-line" aria-hidden="true">▌</span>
-          SELECT EARTH OBSERVATION STORY
-        </h2>
-        <p class="section-desc">
-          Choose a NASA time series. Each story converts real Earth science observations into sound —
-          pitch, timbre, tempo, and alert tones — synchronized with live NASA satellite imagery from GIBS.
-        </p>
+      <div class="landing-hero">
+        <div class="hero-text">
+          <h1>Hear Earth's Climate,<br><span class="hero-accent">Through Sound</span></h1>
+          <p class="hero-desc">
+            Five real NASA datasets — temperature, rainfall, heatwaves — transformed into pitch, rhythm and timbre.
+            Each story is a different Earth observation told entirely through sound.
+          </p>
+        </div>
+        <div class="hero-viz" aria-hidden="true">
+          <canvas id="hero-canvas" width="320" height="160"></canvas>
+        </div>
       </div>
 
-      <!-- Story cards rendered by app.js -->
-      <div id="stories-grid" class="stories-grid" role="list"></div>
+      <div class="section-label">SELECT A STORY</div>
+      <div id="stories-grid" class="stories-grid" role="list">
+        <!-- Injected by app.js -->
+      </div>
 
-      <!-- How It Works panel -->
-      <div class="how-panel">
-        <h3 class="how-title">⚙️ SONIFICATION MAPPING SPEC</h3>
+      <div class="how-section">
+        <div class="section-label">HOW SOUND IS MADE</div>
         <div class="how-grid">
-          <div class="how-item">
-            <span class="how-icon">🎼</span>
-            <div>
-              <strong>VALUE → PITCH</strong>
-              <p>Linear: low data = C3 (deep), high data = C6 (bright). Every note is a data point.</p>
-            </div>
+          <div class="how-card">
+            <span class="how-icon">🎵</span>
+            <strong>Value → Pitch</strong>
+            <p>Low value = deep tone (C3). High value = bright tone (C6). Every note is a real data point.</p>
           </div>
-          <div class="how-item">
+          <div class="how-card">
             <span class="how-icon">🎻</span>
-            <div>
-              <strong>VARIABILITY → TIMBRE</strong>
-              <p>Uniform conditions = pure sine. Chaotic variability = rich sawtooth harmonics.</p>
-            </div>
+            <strong>Variability → Timbre</strong>
+            <p>Uniform conditions = pure sine wave. High spatial chaos = rich sawtooth harmonics.</p>
           </div>
-          <div class="how-item">
+          <div class="how-card">
             <span class="how-icon">⏱</span>
-            <div>
-              <strong>CHANGE RATE → TEMPO</strong>
-              <p>Stable periods = slow rhythm (60 BPM). Rapid anomalies = urgent fast pulse (160 BPM).</p>
-            </div>
+            <strong>Change Rate → Tempo</strong>
+            <p>Slow change = calm 60 BPM. Rapid anomaly = urgent 160 BPM pulse.</p>
           </div>
-          <div class="how-item">
+          <div class="how-card">
             <span class="how-icon">🚨</span>
-            <div>
-              <strong>THRESHOLD → ALARM</strong>
-              <p>Crossing critical limits triggers a layered bell + burst alert and a screen flash.</p>
-            </div>
+            <strong>Thresholds → Alarm</strong>
+            <p>Crossing critical limits triggers a layered alarm bell and screen flash.</p>
           </div>
-          <div class="how-item">
-            <span class="how-icon">🔊</span>
-            <div>
-              <strong>STORY PERSONA</strong>
-              <p>Each story uses a unique synthesizer: AM Flute · FM Drift · Crisis Distortion.</p>
-            </div>
+          <div class="how-card">
+            <span class="how-icon">🎙</span>
+            <strong>Story Persona</strong>
+            <p>Each story has its own synth: AM Flute · FM Drift · Crisis Distortion · Rain Pad · Wildfire Lead.</p>
           </div>
-          <div class="how-item">
+          <div class="how-card">
             <span class="how-icon">🌐</span>
-            <div>
-              <strong>LONGITUDE → STEREO PAN</strong>
-              <p>West regions pan left channel; East regions pan right, adding spatial dimension.</p>
-            </div>
+            <strong>Longitude → Stereo Pan</strong>
+            <p>Western regions pan left; Eastern regions pan right — adding spatial dimension.</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ═══════════════════════════════════════════════════
-         PLAYER VIEW — Synchronized Map + Sound
-    ═══════════════════════════════════════════════════ -->
-    <section id="player-view" class="view" hidden aria-label="Story Player">
+    <!-- ──────────── PLAYER ──────────── -->
+    <section id="view-player" class="view" hidden aria-label="Story Player">
 
-      <!-- Player Top Bar -->
-      <div class="player-topbar">
-        <button id="btn-back" class="btn btn-ghost btn-back" aria-label="Back to story catalog">
-          ← CATALOG
-        </button>
-        <div class="player-story-info">
-          <div class="story-badges-row">
-            <span class="badge" id="player-shape-badge">STORY</span>
-            <span class="badge badge-src">NASA DATA</span>
-            <span class="badge badge-synth" id="player-synth-badge">SYNTHESIS</span>
-          </div>
-          <h2 id="player-title" class="player-title">—</h2>
-          <p id="player-subtitle" class="player-subtitle">—</p>
-        </div>
-      </div>
+      <div class="player-layout">
 
-      <!-- Main 2-column layout -->
-      <div class="player-main">
+        <!-- LEFT: Map + Viz -->
+        <div class="player-left">
 
-        <!-- LEFT: Map Column -->
-        <div class="map-col">
-          <!-- Waveform oscilloscope ABOVE the map -->
-          <div class="oscilloscope-wrapper" aria-hidden="true">
-            <div class="osc-label">AUDIO WAVEFORM</div>
-            <canvas id="waveform-canvas" class="waveform-canvas" width="600" height="80"></canvas>
+          <!-- Story selector tabs -->
+          <div class="story-tabs" id="story-tabs" role="tablist" aria-label="Switch story">
+            <!-- Injected by app.js -->
           </div>
 
-          <!-- Leaflet Map with GIBS tiles -->
-          <div class="map-wrapper">
-            <div id="map" role="region" aria-label="NASA GIBS satellite map showing current frame region"></div>
-
-            <!-- Map chip overlays -->
-            <div class="map-chip-tl" id="chip-date" aria-hidden="true">📅 —</div>
-            <div class="map-chip-tr" id="chip-layer" aria-hidden="true">GIBS · TrueColor</div>
-            <div class="map-chip-bl" id="chip-dataset" aria-hidden="true">NASA POWER</div>
-            <div class="map-chip-br" id="chip-status" aria-hidden="true">
-              <span class="live-dot"></span> LIVE SYNC
+          <!-- Data Visualization Canvas overlaid on map -->
+          <div class="map-container" role="region" aria-label="Synchronized satellite map">
+            <!-- Instant visual canvas (always in sync) -->
+            <canvas id="data-viz-canvas" class="data-viz-canvas" aria-hidden="true"></canvas>
+            <!-- Leaflet map (satellite imagery, may lag slightly) -->
+            <div id="map"></div>
+            <!-- Map overlay chips -->
+            <div class="map-chip top-left" id="chip-date" aria-hidden="true">📅 —</div>
+            <div class="map-chip top-right" id="chip-dataset" aria-hidden="true">NASA POWER</div>
+            <div class="map-chip bottom-right" id="chip-sync" aria-hidden="true">
+              <span class="live-dot-sm" id="live-dot-sm"></span> SYNCED
             </div>
           </div>
 
-          <div class="map-footnote">
-            Imagery: Global Imagery Browse Services (GIBS), NASA/GSFC/ESDIS
+          <!-- Oscilloscope waveform -->
+          <div class="osc-wrapper" aria-hidden="true">
+            <span class="osc-label">AUDIO WAVEFORM</span>
+            <canvas id="waveform-canvas" class="osc-canvas"></canvas>
           </div>
+
         </div>
 
-        <!-- RIGHT: Readout + Legend Column -->
-        <div class="info-col">
+        <!-- RIGHT: Readout + Controls -->
+        <div class="player-right">
 
-          <!-- Big Metric Card -->
-          <div class="metric-card" id="metric-card">
-            <div class="metric-header">
-              <span class="metric-label-top">CURRENT OBSERVATION</span>
-              <span class="frame-counter" id="frame-counter">—/—</span>
+          <!-- Big metric readout -->
+          <div class="metric-panel" id="metric-panel">
+            <div class="metric-top">
+              <span class="metric-story-name" id="mp-story-name">—</span>
+              <span class="metric-frame-counter" id="mp-frame">— / —</span>
             </div>
-
-            <div class="metric-body">
-              <div class="metric-date" id="vis-date">—</div>
-              <div class="metric-value-row">
-                <span class="metric-value" id="vis-value">—</span>
-                <span class="metric-unit" id="vis-unit">—</span>
+            <div class="metric-date" id="mp-date">—</div>
+            <div class="metric-value-row">
+              <span class="metric-value" id="mp-value">—</span>
+              <span class="metric-unit" id="mp-unit">—</span>
+            </div>
+            <div class="metric-intensity-wrap" aria-hidden="true">
+              <div class="metric-intensity-track">
+                <div class="metric-intensity-bar" id="mp-bar"></div>
+                <div class="metric-intensity-cursor" id="mp-cursor"></div>
               </div>
-              <!-- Intensity bar (shows where this value sits in the story range) -->
-              <div class="intensity-track" aria-hidden="true">
-                <div class="intensity-fill" id="intensity-fill" style="width:0%"></div>
-                <div class="intensity-pointer" id="intensity-pointer" style="left:0%"></div>
-              </div>
-              <div class="intensity-labels" aria-hidden="true">
-                <span id="range-low-label">—</span>
-                <span id="range-high-label">—</span>
+              <div class="metric-intensity-labels">
+                <span id="mp-low">—</span>
+                <span id="mp-high">—</span>
               </div>
             </div>
-
-            <!-- ARIA live region for screen readers -->
+            <!-- ARIA live region -->
             <p class="sr-only" id="live-readout" aria-live="polite" aria-atomic="true">Ready.</p>
           </div>
 
-          <!-- Alert Flash Banner (hidden until threshold crosses) -->
-          <div class="alert-banner" id="alert-banner" hidden role="alert">
-            <span class="alert-icon">🚨</span>
-            <span id="alert-message">THRESHOLD CROSSED</span>
+          <!-- Alert banner -->
+          <div class="alert-panel" id="alert-panel" hidden role="alert" aria-live="assertive">
+            <span class="alert-icon-big">🚨</span>
+            <div>
+              <strong>THRESHOLD EXCEEDED</strong>
+              <p id="alert-text">—</p>
+            </div>
           </div>
 
-          <!-- Narrative Summary -->
-          <div class="narrative-card">
-            <div class="card-title-row">
-              <span class="card-label">📡 CLIMATE NARRATIVE</span>
-            </div>
-            <p id="narrative-text">Select a story to begin.</p>
+          <!-- Narrative -->
+          <div class="info-card">
+            <div class="info-card-title">📡 CLIMATE NARRATIVE</div>
+            <p id="narrative" class="narrative-text">—</p>
           </div>
 
-          <!-- Sonification Legend -->
-          <div class="legend-card">
-            <div class="card-title-row">
-              <span class="card-label">🎧 SOUND LEGEND</span>
-              <span class="synth-tag" id="synth-label-tag">—</span>
+          <!-- Sound Legend -->
+          <div class="info-card">
+            <div class="info-card-title-row">
+              <span class="info-card-title">🎧 SOUND LEGEND</span>
+              <span class="synth-pill" id="synth-pill">—</span>
             </div>
 
-            <div class="scale-row">
-              <span class="scale-min" id="scale-min-label">LOW</span>
-              <div class="scale-gradient" id="scale-gradient"></div>
-              <span class="scale-max" id="scale-max-label">HIGH</span>
+            <div class="legend-gradient-row">
+              <span class="legend-minmax" id="leg-min">—</span>
+              <div class="legend-gradient" id="leg-gradient"></div>
+              <span class="legend-minmax" id="leg-max">—</span>
             </div>
+            <div class="threshold-line" id="leg-threshold">Threshold alert: none</div>
 
-            <p class="thresh-note" id="thresh-note">Threshold alert: none</p>
-
-            <div class="sample-row">
+            <div class="sample-row" role="group" aria-label="Preview sounds">
               <span class="sample-label">PREVIEW:</span>
-              <button class="btn btn-sample" data-sample="low" aria-label="Preview low note">◆ LOW</button>
-              <button class="btn btn-sample" data-sample="mid" aria-label="Preview mid note">◆ MID</button>
-              <button class="btn btn-sample" data-sample="high" aria-label="Preview high note">◆ HIGH</button>
-              <button class="btn btn-sample btn-alert-sample" data-sample="marker" aria-label="Preview threshold alarm">🚨 ALARM</button>
+              <button class="btn-sample" data-sample="low" aria-label="Low note">LOW</button>
+              <button class="btn-sample" data-sample="mid" aria-label="Mid note">MID</button>
+              <button class="btn-sample" data-sample="high" aria-label="High note">HIGH</button>
+              <button class="btn-sample btn-sample-alert" data-sample="marker" aria-label="Alert sound">🚨 ALARM</button>
             </div>
           </div>
 
+          <!-- Keyboard hints -->
+          <div class="kbd-hints" aria-hidden="true">
+            <span><kbd>Space</kbd> Play/Pause</span>
+            <span><kbd>←</kbd><kbd>→</kbd> Step</span>
+            <span><kbd>1–5</kbd> Story</span>
+            <span><kbd>Esc</kbd> Catalog</span>
+          </div>
         </div>
       </div>
 
-      <!-- ═══ PLAYBACK CONTROLS ═══ -->
-      <div class="controls-panel" role="region" aria-label="Playback controls">
+      <!-- ═══ PLAYBACK CONTROLS BAR ═══ -->
+      <div class="controls-bar" role="region" aria-label="Playback controls">
 
-        <!-- Timeline -->
-        <div class="timeline-row">
-          <span class="tl-date" id="tl-start">—</span>
-          <div class="timeline-wrapper">
-            <label for="scrubber" class="sr-only">Frame Scrubber</label>
-            <input type="range" id="scrubber" class="scrubber" min="0" max="100" value="0" step="1">
-            <!-- Alert marker pip on timeline -->
-            <div class="timeline-alert-pip" id="timeline-alert-pip" hidden aria-hidden="true">⚠</div>
-          </div>
-          <span class="tl-date" id="tl-end">—</span>
-        </div>
+        <div class="controls-top">
+          <!-- Back button -->
+          <button id="btn-back" class="ctrl-back" aria-label="Back to story catalog">← CATALOG</button>
 
-        <!-- Button Row -->
-        <div class="ctrl-row">
-          <div class="ctrl-group">
-            <button id="btn-step-back" class="btn btn-ctrl" aria-label="Step back one frame" title="← Arrow">⏮ BACK</button>
-            <button id="btn-play" class="btn btn-play-main" aria-label="Play" aria-pressed="false">
-              <span id="play-glyph">▶</span> <span id="play-label">PLAY</span>
+          <!-- Transport -->
+          <div class="transport">
+            <button id="btn-prev" class="ctrl-btn" title="Step back (← Arrow)" aria-label="Step back one frame">⏮</button>
+            <button id="btn-play" class="ctrl-play" aria-label="Play" aria-pressed="false">
+              <span id="play-glyph">▶</span><span id="play-lbl">PLAY</span>
             </button>
-            <button id="btn-step-fwd" class="btn btn-ctrl" aria-label="Step forward one frame" title="→ Arrow">FWD ⏭</button>
+            <button id="btn-next" class="ctrl-btn" title="Step forward (→ Arrow)" aria-label="Step forward one frame">⏭</button>
           </div>
 
-          <div class="ctrl-group ctrl-mid">
-            <label class="ctrl-label" for="speed-select">SPEED</label>
-            <select id="speed-select" class="ctrl-select" aria-label="Playback speed">
+          <!-- Speed + Volume -->
+          <div class="ctrl-row-right">
+            <label class="ctrl-mini-label" for="speed-sel">SPEED</label>
+            <select id="speed-sel" class="ctrl-select" aria-label="Playback speed">
               <option value="0.5">0.5×</option>
-              <option value="1.0" selected>1.0×</option>
+              <option value="1.0" selected>1×</option>
               <option value="1.5">1.5×</option>
-              <option value="2.0">2.0×</option>
+              <option value="2.0">2×</option>
+              <option value="3.0">3×</option>
             </select>
-          </div>
-
-          <div class="ctrl-group ctrl-mid">
-            <label class="ctrl-label" for="vol-slider">VOL</label>
-            <input type="range" id="vol-slider" class="ctrl-range vol-range" min="-30" max="0" value="-8" step="1" aria-label="Master Volume">
+            <label class="ctrl-mini-label" for="vol-rng">VOL</label>
+            <input type="range" id="vol-rng" class="ctrl-vol" min="-10" max="12" value="4" step="1" aria-label="Master Volume">
           </div>
         </div>
 
-        <div class="shortcuts-row" aria-hidden="true">
-          <span>SPACE: Play/Pause</span>
-          <span>← →: Step Frame</span>
-          <span>HOME/END: First/Last</span>
-          <span>1 2 3: Switch Story</span>
-          <span>ESC: Catalog</span>
+        <!-- Timeline scrubber -->
+        <div class="timeline-wrap">
+          <span class="tl-label" id="tl-start">—</span>
+          <div class="tl-track" id="tl-track">
+            <label for="scrubber" class="sr-only">Frame timeline scrubber</label>
+            <input type="range" id="scrubber" class="scrubber-input" min="0" max="100" value="0" step="1">
+            <div class="tl-alert-pip" id="tl-pip" hidden aria-hidden="true">⚡</div>
+          </div>
+          <span class="tl-label" id="tl-end">—</span>
         </div>
-      </div>
-
-      <!-- Dataset provenance footer -->
-      <div class="data-footer">
-        <span>Dataset: <strong id="meta-dataset">—</strong></span>
-        <span>Source: <strong id="meta-source">NASA POWER</strong></span>
-        <span>Area: <strong id="meta-area">—</strong></span>
-        <span>BBox: <strong id="meta-bbox">—</strong></span>
       </div>
 
     </section>
@@ -319,19 +272,13 @@
 
   <!-- ═══ FOOTER ═══ -->
   <footer class="app-footer" role="contentinfo">
-    <div class="footer-inner">
-      <span>🌍 <strong>Earth Jukebox</strong> — Solo submission,
-        <a href="https://www.spaceappschallenge.org/" target="_blank" rel="noopener">NASA Space Apps 2026</a>
-      </span>
-      <span class="footer-sep">·</span>
-      <span>Data: NASA POWER · NASA GIBS · NASA VEDA</span>
-      <span class="footer-sep">·</span>
-      <span>Audio: <a href="https://tonejs.github.io/" target="_blank" rel="noopener">Tone.js</a> · Map: <a href="https://leafletjs.com/" target="_blank" rel="noopener">Leaflet</a></span>
-    </div>
+    <span>🌍 <strong>Earth Jukebox</strong> — NASA Space Apps 2026 · Solo</span>
+    <span>Data: NASA POWER · NASA GIBS · NASA VEDA</span>
+    <span>Imagery: NASA/GSFC/ESDIS (GIBS)</span>
   </footer>
 
   <!-- Threshold flash overlay -->
-  <div id="threshold-flash" class="threshold-flash" aria-hidden="true"></div>
+  <div id="flash-overlay" class="flash-overlay" aria-hidden="true"></div>
 
   <!-- CDN -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>

@@ -3,86 +3,86 @@
 **NASA International Space Apps Challenge 2026**  
 **Challenge:** The Earth Information Jukebox  
 **Participation:** Solo Build  
-**Live Demo:** [https://ahmad.github.io/earth-jukebox](https://ahmad.github.io/earth-jukebox) *(or open `index.html` directly in any modern web browser)*
+**Live Demo:** [https://ahmad.github.io/earth-jukebox](https://ahmad.github.io/earth-jukebox) *(or open `index.html` directly in any web browser)*
 
 ---
 
 ## Overview
 
-**Earth Jukebox** is a fully accessible, static web application that translates NASA Earth science observations into sound (*sonification*), synchronized with a frame-by-frame satellite map display from NASA GIBS. It allows researchers, students, visually impaired users, and the public to experience climate dynamics **by ear alone**.
+**Earth Jukebox** is an accessible, modern web application that translates NASA Earth observation time series into multi-dimensional sound (*sonification*), synchronized with real-time visual canvas animations and NASA GIBS satellite imagery.
 
-The app showcases three distinct time series shapes specified in the challenge brief:
-1. **Seasonal Cycle:** Mediterranean Annual Temperature Cycle (2018–2023) — rhythmic harmonic wave echoing Earth's orbital tilt.
-2. **Long Trend:** Tokyo Decadal Climate Drift (2000–2023) — 24-year progressive upward baseline shift.
-3. **Sudden Event ⭐ (Primary Showcase):** 2021 Pacific Northwest Heat Dome (May–August 2021) — calm spring baseline violently shattered in late June, triggering a percussive alert chime as temperatures cross 38°C (100°F) and soar to 39.3°C.
+It allows researchers, students, visually impaired users, and the public to experience climate dynamics **by ear and eye simultaneously**.
 
 ---
 
-## Sonification Mapping Specification
+## 5 Verified NASA Earth Data Stories
 
-Every frame is rendered in real time into Web Audio dimensions using pure mathematical mappings:
+| # | Story | Dataset | Period | Synthesis Persona |
+|---|---|---|---|---|
+| **1** | **Breathing with the Seasons** | Mediterranean Air Temp ($T_{2M}$) | 2018–2023 (72 mo) | **AM Flute + Reverb** (Airy, harmonic orbital cycle) |
+| **2** | **A Decadal Drift** | Tokyo Basin Warming ($T_{2M}$) | 2000–2023 (288 mo) | **FM Drift + Ping-Pong Delay** (Slow harmonic shimmer) |
+| **3** | **Heat Dome: Pacific Northwest ⭐** | Max Daily Temperature ($T_{2M\_MAX}$) | May–Aug 2021 (123 d) | **Crisis Distortion MonoSynth** (Sharp alert at 38°C / 100°F) |
+| **4** | **Amazon Rainfall Pulse** | Amazon Basin Precipitation | 2015–2023 (108 mo) | **Lush PolySynth Rain Pad + Chorus** (Wet/dry breathing) |
+| **5** | **Black Summer Bushfires** | NSW Australia Extreme Heat | Jul 2019–Mar 2020 (275 d) | **Wildfire Sawtooth Lead** (Repeated alarms > 40°C) |
+
+---
+
+## Real-Time Audio-Visual Synchronization
+
+### Why Earlier NASA Image Loading Lags Behind Audio:
+NASA GIBS operates as a planetary tile server across HTTP. Fetching multiple 256×256 JPEG tiles per frame across live playback causes bandwidth contention and visual lag.
+
+### The Earth Jukebox Solution:
+1. **Instant Canvas Data-Viz Overlay:** A GPU-accelerated `<canvas>` is drawn directly over the map at 60 FPS in zero milliseconds. As each note sounds, a color-reactive temperature orb and ripple pulse expand in exact lockstep with Tone.js audio.
+2. **Smart GIBS Preloading:** The app samples and pre-caches satellite tile images in the browser cache, debouncing tile updates during rapid playback (1.5s intervals) and instantly locking to the exact tile on pause/scrub.
+3. **Live Oscilloscope:** A high-speed Web Audio `AnalyserNode` displays the real-time audio waveform above the map, glowing cyan during normal playback and flashing red during threshold alarms.
+
+---
+
+## Sonification Mathematical Specification
 
 | Data Dimension | Audio Dimension | Mathematical Rule |
 |---|---|---|
-| **Value** (e.g. Temperature in °C) | **Pitch** | Linear mapping from $[min, max]$ to MIDI 48 (C3, 130.8 Hz) through MIDI 84 (C6, 1046.5 Hz). Monotonic and deterministic. |
-| **Spatial Spread** (Variability) | **Timbre** | Low spread $\rightarrow$ pure sine wave; medium spread $\rightarrow$ triangle wave; high spread $\rightarrow$ harmonic-rich sawtooth wave. |
-| **Rate of Change** ($\Delta$ value) | **Tempo** | Dynamic playback speed from 60 BPM (stable conditions) up to 160 BPM (rapid anomalies). |
-| **Threshold Crossing** | **Percussive Alert** | Distinct membrane kick chime fires precisely when the value breaches critical thresholds (e.g., 38°C). |
+| **Value** | **Pitch** | Linear mapping from $[min, max]$ to MIDI 48 (C3, 130.8 Hz) through MIDI 84 (C6, 1046.5 Hz). Monotonic pure function. |
+| **Spatial Spread** | **Timbre** | Low spread $\rightarrow$ pure sine; medium $\rightarrow$ triangle; high $\rightarrow$ harmonic-rich sawtooth. |
+| **Rate of Change** ($\Delta$) | **Tempo** | Dynamic speed from 60 BPM (stable) up to 160 BPM (rapid anomaly). |
+| **Threshold Breach** | **Layered Alarm** | Metal bell synth (`C5`) + pink noise burst fires on breach date/value, with a full-screen red flash. |
 | **Longitude** | **Stereo Pan** | Longitude mapped from $[-180^\circ, +180^\circ]$ to $[-1.0, +1.0]$ across stereo channels. |
 
 ---
 
-## Accessibility (WCAG 2.1 AA Compliant)
-
-Designed from the ground up for universal access:
-- **ARIA Live Region:** Dedicated `#live-readout` with `aria-live="polite"` announces date, numerical value, units, and threshold alerts for screen-reader users on every frame.
-- **Full Keyboard Navigation:**
-  - `Space`: Play / Pause toggle
-  - `←` / `→`: Step back / forward one frame
-  - `Home` / `End`: Jump to beginning / end of time series
-  - `1`, `2`, `3`: Instant switch between the 3 stories
-  - `Esc`: Return to story selection catalog
-- **Interactive Legend:** Sample buttons allow listening to low, mid, high, and alert tones independently without running full playback.
-- **No Autoplay:** Audio initializes strictly following an explicit user click/keypress in compliance with browser Web Audio policies.
-- **High-Contrast Focus Outlines:** High visibility `:focus-visible` rings throughout.
+## Audio Master Output
+- **Boosted Volume:** High-gain master bus with dynamic **Limiter** (`-0.5 dB`) to deliver loud, clear sound without clipping or distortion.
+- **Atmospheric Sub-Pad:** Gentle ambient drone beneath each story that slowly shifts pitch with climate baseline changes.
 
 ---
 
-## NASA Data & Imagery Sources
+## Accessibility & Keyboard Navigation (WCAG 2.1 AA)
 
-- **NASA POWER (Prediction of Worldwide Energy Resources):** Daily and monthly air temperature ($T_{2M}$, $T_{2M\_MAX}$) point and regional time series.
-- **NASA GIBS (Global Imagery Browse Services):** Dynamic satellite imagery tile layer (`MODIS_Terra_CorrectedReflectance_TrueColor`) updated synchronously with each frame's observation date.
-- **NASA VEDA (Visualization, Exploration, and Data Analysis):** Catalog and raster statistics architecture.
+- **Screen Reader Announcements:** Dedicated ARIA live region (`#live-readout`, `aria-live="polite"`) speaks date, value, units, and alerts on every frame.
+- **Keyboard Shortcuts:**
+  - `Space`: Play / Pause toggle
+  - `←` / `→`: Step backward / forward one frame
+  - `Home` / `End`: Jump to start / end of time series
+  - `1`, `2`, `3`, `4`, `5`: Instant switch between the 5 stories
+  - `Esc`: Return to catalog
+- **Interactive Legend:** Preview Low, Mid, High notes and the Threshold Alarm independently.
 
-### Data Verification & Re-fetch
+---
 
-All data is pre-cached in static JSON files (`data/*.json`) so the demo never fails on live network constraints or rate limits.
+## How to Run & Verify
 
-To re-fetch or update the datasets:
 ```bash
-pip install -r scripts/requirements.txt
-python scripts/fetch_power.py
-python scripts/test_mappings.py
+# 1. Run local web server
+python3 -m http.server 8000
+
+# 2. Run automated validation suite
+python3 scripts/test_mappings.py
 ```
 
 ---
 
-## Technical Stack
+## NASA Citations & Acknowledgments
 
-- **Zero Build Step:** Plain HTML5, CSS3, and modern Vanilla JavaScript.
-- **Audio Synthesis:** [Tone.js v14](https://tonejs.github.io/) via CDN.
-- **Mapping:** [Leaflet.js v1.9](https://leafletjs.com/) via CDN with NASA GIBS WMTS endpoint.
-- **Hosting:** Fully static (GitHub Pages, Netlify, or local web server).
-
----
-
-## AI Disclosure
-
-In accordance with NASA Space Apps Challenge guidelines: AI coding assistants were utilized for script generation, dataset parsing, and accessibility structure verification under the direction and supervision of the solo participant.
-
----
-
-## Acknowledgments & Citations
-
-> *Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (ESDIS) with funding provided by NASA/HQ.*
-
+> *Imagery provided by services from the Global Imagery Browse Services (GIBS), operated by the NASA/GSFC/Earth Science Data and Information System (ESDIS) with funding provided by NASA/HQ.*  
+> *Data courtesy of NASA POWER (LaRC) and NASA VEDA.*

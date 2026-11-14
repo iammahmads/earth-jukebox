@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
-Python automated verification of Earth Jukebox sonification mappings & data files.
-Equivalent to tests.js assertions.
+Automated verification of Earth Jukebox sonification mappings & all 5 data files.
+Run: python3 scripts/test_mappings.py
 """
 
 import json
-import math
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -97,8 +96,15 @@ def test_mappings():
     assert_test(not is_threshold_crossing(f3, f2, mock), "Does not repeat crossing when already above")
 
 def test_data_files():
-    print("\n=== Validating Story JSON Files ===")
-    for sid in ["story-1-seasonal", "story-2-trend", "story-3-event"]:
+    print("\n=== Validating All 5 Story JSON Files ===")
+    all_stories = [
+        "story-1-seasonal",
+        "story-2-trend",
+        "story-3-event",
+        "story-4-amazon",
+        "story-5-australia"
+    ]
+    for sid in all_stories:
         p = DATA_DIR / f"{sid}.json"
         assert_test(p.exists(), f"File {p.name} exists on disk")
         with open(p) as f:
@@ -106,12 +112,10 @@ def test_data_files():
         assert_test(len(d["frames"]) > 0, f"{sid} has {len(d['frames'])} frames")
         assert_test(d["min"] <= d["max"], f"{sid} min ({d['min']}) <= max ({d['max']})")
         assert_test("area" in d and "bbox" in d["area"], f"{sid} defines area and bbox")
-        # Check monotonic timestamps
         dates = [f["date"] for f in d["frames"]]
         assert_test(dates == sorted(dates), f"{sid} dates are strictly sorted chronologically")
 
 if __name__ == "__main__":
     test_mappings()
     test_data_files()
-    print("\n🎉 ALL TESTS AND DATA VALIDATIONS PASSED! 🎉")
-
+    print("\n🎉 ALL 5 STORIES & MAPPINGS PASSED VALIDATION! 🎉")
